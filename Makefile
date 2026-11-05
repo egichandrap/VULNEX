@@ -60,6 +60,14 @@ test-arch: ## Run Clean Architecture and package boundary validation tests
 .PHONY: build
 build: build-api build-worker build-cli ## Build all executables
 
+.PHONY: build-all
+build-all: build build-frontend ## Build backend, worker, CLI, and frontend
+
+.PHONY: build-frontend
+build-frontend: ## Build frontend Next.js application
+	@echo "Building frontend Next.js application..."
+	@cd frontend && npm run build
+
 .PHONY: build-api
 build-api: ## Build backend API binary
 	@mkdir -p $(BIN_DIR)
