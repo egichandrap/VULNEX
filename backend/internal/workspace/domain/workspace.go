@@ -21,6 +21,13 @@ type WorkspaceID struct {
 	value string
 }
 
+func NewWorkspaceID(val string) (WorkspaceID, error) {
+	if strings.TrimSpace(val) == "" {
+		return WorkspaceID{}, errors.New("workspace ID cannot be empty")
+	}
+	return WorkspaceID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateWorkspaceID() (WorkspaceID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -39,6 +46,13 @@ func (w WorkspaceID) String() string {
 // UserID represents an identity reference within the workspace context.
 type UserID struct {
 	value string
+}
+
+func NewUserID(val string) (UserID, error) {
+	if strings.TrimSpace(val) == "" {
+		return UserID{}, errors.New("user ID cannot be empty")
+	}
+	return UserID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateUserID() (UserID, error) {
