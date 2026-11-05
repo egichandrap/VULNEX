@@ -115,7 +115,7 @@ func newInstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&mode, "mode", "", "Deployment mode: 'local' (loopback) or 'server' (remote access)")
+	cmd.Flags().StringVarP(&mode, "mode", "m", "", "Deployment mode: 'local' (loopback) or 'server' (remote access)")
 	cmd.Flags().StringVar(&domainName, "domain", "", "Public hostname for server mode (used for Caddy ACME TLS)")
 	cmd.Flags().StringVar(&version, "version", "", "Exact VULNEX release to install")
 	cmd.Flags().StringVar(&dataDir, "data-dir", "", "Persistent data directory path")

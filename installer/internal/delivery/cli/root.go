@@ -14,7 +14,7 @@ func NewRootCommand() *cobra.Command {
 		Long: `VULNEX CLI is the unified control plane for diagnosing, installing,
 and managing VULNEX deployments in Local and Server modes.`,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 	}
 
 	cmd.AddCommand(

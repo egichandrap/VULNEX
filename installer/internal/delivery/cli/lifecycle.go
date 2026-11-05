@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/vulnex/vulnex/installer/internal/application"
@@ -29,6 +30,10 @@ func newStatusCmd() *cobra.Command {
 
 			state, services, err := uc.Status(cmd.Context(), dataDir)
 			if err != nil {
+				if strings.Contains(err.Error(), "no such file") {
+					cmd.Printf("No active VULNEX installation found in '%s'. Run 'vulnex install' to deploy.\n", dataDir)
+					return nil
+				}
 				return err
 			}
 

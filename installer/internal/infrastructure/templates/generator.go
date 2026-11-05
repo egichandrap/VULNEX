@@ -45,7 +45,16 @@ func (g *Generator) Render(cfg *domain.InstallConfig, targetDir string) error {
 		return domain.WrapError(domain.ExitGeneralFailure, "failed to write docker-compose.yml", err)
 	}
 
-	// 2. Render Caddyfile (if Server mode with Embedded Caddy)
+	// 2. Render init.sql (Database schema)
+	initData, err := assetsFS.ReadFile("assets/init.sql")
+	if err == nil {
+		initDest := filepath.Join(cleanDir, "init.sql")
+		if err := os.WriteFile(initDest, initData, 0600); err != nil {
+			return domain.WrapError(domain.ExitGeneralFailure, "failed to write init.sql", err)
+		}
+	}
+
+	// 3. Render Caddyfile (if Server mode with Embedded Caddy)
 	if cfg.Mode == domain.DeploymentModeServer && cfg.Ingress == domain.IngressEmbeddedCaddy {
 		caddyData, err := assetsFS.ReadFile("assets/Caddyfile")
 		if err != nil {

@@ -18,6 +18,10 @@ func newDashboardCmd() *cobra.Command {
 			}
 
 			store := storage.NewFileStorage()
+			if _, err := store.LoadState(cmd.Context(), dataDir); err != nil {
+				cmd.Printf("Notice: No active deployment state in '%s'. Ensure VULNEX is running via 'vulnex install' or 'vulnex start'.\n", dataDir)
+			}
+
 			uc := application.NewDashboardUseCase(store, store)
 
 			url, err := uc.ResolveURL(cmd.Context(), dataDir)

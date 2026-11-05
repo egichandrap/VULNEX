@@ -84,17 +84,36 @@ func (a *ComposeAdapter) Ps(ctx context.Context, composePath string) (map[string
 		return nil, domain.WrapError(domain.ExitGeneralFailure, "failed to query docker compose ps: "+string(out), err)
 	}
 
+	type psItem struct {
+		Service string `json:"Service"`
+		State   string `json:"State"`
+		Status  string `json:"Status"`
+	}
+
 	services := make(map[string]string)
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	trimmed := strings.TrimSpace(string(out))
+	if strings.HasPrefix(trimmed, "[") {
+		var items []psItem
+		if err := json.Unmarshal([]byte(trimmed), &items); err == nil {
+			for _, item := range items {
+				if item.Service != "" {
+					state := item.State
+					if state == "" {
+						state = item.Status
+					}
+					services[item.Service] = state
+				}
+			}
+			return services, nil
+		}
+	}
+
+	lines := strings.Split(trimmed, "\n")
 	for _, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		var item struct {
-			Service string `json:"Service"`
-			State   string `json:"State"`
-			Status  string `json:"Status"`
-		}
+		var item psItem
 		if err := json.Unmarshal([]byte(line), &item); err == nil && item.Service != "" {
 			state := item.State
 			if state == "" {
