@@ -52,10 +52,22 @@ func NewIngestFindingsUseCase(
 func (uc *IngestFindingsUseCase) Execute(ctx context.Context, cmd IngestFindingsCommand) (*IngestFindingsResult, error) {
 	result := &IngestFindingsResult{}
 
-	workspaceID, _ := domain.GenerateWorkspaceID()
-	projectID, _ := domain.GenerateProjectID()
-	scanID, _ := domain.GenerateScanID()
-	assetID, _ := domain.GenerateAssetID()
+	workspaceID, err := domain.NewWorkspaceID(cmd.WorkspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid workspace ID: %w", err)
+	}
+	projectID, err := domain.NewProjectID(cmd.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid project ID: %w", err)
+	}
+	scanID, err := domain.NewScanID(cmd.ScanID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid scan ID: %w", err)
+	}
+	assetID, err := domain.NewAssetID(cmd.AssetID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid asset ID: %w", err)
+	}
 
 	for _, obs := range cmd.Observations {
 		// 1. Calculate deterministic fingerprint

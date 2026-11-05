@@ -28,6 +28,11 @@ func (r *UserRepository) Save(ctx context.Context, user *domain.User) error {
 	query := `
 		INSERT INTO users (id, email_normalized, password_hash, display_name, status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (id) DO UPDATE SET
+			password_hash = EXCLUDED.password_hash,
+			display_name = EXCLUDED.display_name,
+			status = EXCLUDED.status,
+			updated_at = EXCLUDED.updated_at
 	`
 	_, err := r.db.ExecContext(
 		ctx,

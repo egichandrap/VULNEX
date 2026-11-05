@@ -82,6 +82,7 @@ class APIClient {
     this.token = token;
     if (typeof window !== 'undefined') {
       localStorage.setItem('vulnex_token', token);
+      window.dispatchEvent(new Event('vulnex:auth-change'));
     }
   }
 
@@ -89,6 +90,8 @@ class APIClient {
     this.token = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('vulnex_token');
+      localStorage.removeItem('vulnex_user');
+      window.dispatchEvent(new Event('vulnex:auth-change'));
     }
   }
 
@@ -133,8 +136,18 @@ class APIClient {
         body: JSON.stringify(req),
       }
     );
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('vulnex_user', JSON.stringify(res.user));
+    }
     this.setToken(res.token);
     return res;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ status: string; message: string }>('/api/v1/auth/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
   }
 
   async getMe() {

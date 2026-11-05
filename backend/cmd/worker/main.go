@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -90,14 +92,114 @@ func main() {
 			log.Println("[VULNEX WORKER] Worker stopped cleanly.")
 			return
 		case <-ticker.C:
-			processNextJob(ctx, workerID, scanJobQueue, scanRepo, nmapAdapter, nmapParser, zapAdapter, zapParser, ingestFindingsUC)
+			processNextJob(ctx, workerID, db, scanJobQueue, scanRepo, nmapAdapter, nmapParser, zapAdapter, zapParser, ingestFindingsUC)
 		}
 	}
+}
+
+func ensureAssetID(ctx context.Context, db postgres.DBTX, projectID string, target string) (string, error) {
+	canonical := target
+	if u, err := url.Parse(target); err == nil && u.Host != "" {
+		canonical = u.Host
+	}
+
+	var assetID string
+	querySelect := `SELECT id FROM assets WHERE project_id = $1 AND canonical_value = $2 LIMIT 1`
+	if err := db.QueryRowContext(ctx, querySelect, projectID, canonical).Scan(&assetID); err == nil {
+		return assetID, nil
+	}
+
+	queryInsert := `
+		INSERT INTO assets (id, project_id, asset_type, canonical_value, display_value, criticality, status)
+		VALUES (gen_random_uuid(), $1, 'DOMAIN', $2, $2, 'MEDIUM', 'ACTIVE')
+		ON CONFLICT (project_id, asset_type, canonical_value) DO UPDATE SET updated_at = clock_timestamp()
+		RETURNING id;
+	`
+	if err := db.QueryRowContext(ctx, queryInsert, projectID, canonical).Scan(&assetID); err != nil {
+		return "", fmt.Errorf("failed to ensure asset: %w", err)
+	}
+	return assetID, nil
+}
+
+func probeWebSecurity(ctx context.Context, targetURL string) []scanner.Observation {
+	var obs []scanner.Observation
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", targetURL, nil)
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; VULNEX-Scanner/1.0)")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("[VULNEX WORKER] Web probe failed on %s: %v", targetURL, err)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.Header.Get("Content-Security-Policy") == "" {
+		obs = append(obs, scanner.Observation{
+			Title:            "Content Security Policy (CSP) Header Not Set",
+			Description:      "Content Security Policy is an effective defense against Cross-Site Scripting (XSS) and data injection attacks.",
+			Severity:         "MEDIUM",
+			Confidence:       "CONFIRMED",
+			SourceScanner:    "web-baseline",
+			VulnerabilityKey: "missing-csp",
+			LocationKey:      targetURL,
+		})
+	}
+	if strings.HasPrefix(targetURL, "https://") && resp.Header.Get("Strict-Transport-Security") == "" {
+		obs = append(obs, scanner.Observation{
+			Title:            "HTTP Strict Transport Security (HSTS) Missing",
+			Description:      "The application does not enforce HTTPS via HSTS header, leaving users vulnerable to SSL stripping.",
+			Severity:         "MEDIUM",
+			Confidence:       "CONFIRMED",
+			SourceScanner:    "web-baseline",
+			VulnerabilityKey: "missing-hsts",
+			LocationKey:      targetURL,
+		})
+	}
+	if resp.Header.Get("X-Frame-Options") == "" {
+		obs = append(obs, scanner.Observation{
+			Title:            "X-Frame-Options Header Not Set (Clickjacking Risk)",
+			Description:      "Missing X-Frame-Options header may allow attackers to frame the web application and perform clickjacking attacks.",
+			Severity:         "MEDIUM",
+			Confidence:       "CONFIRMED",
+			SourceScanner:    "web-baseline",
+			VulnerabilityKey: "missing-xfo",
+			LocationKey:      targetURL,
+		})
+	}
+	if resp.Header.Get("X-Content-Type-Options") == "" {
+		obs = append(obs, scanner.Observation{
+			Title:            "X-Content-Type-Options Header Missing (MIME Sniffing)",
+			Description:      "Missing X-Content-Type-Options: nosniff header may allow browsers to perform MIME sniffing.",
+			Severity:         "LOW",
+			Confidence:       "CONFIRMED",
+			SourceScanner:    "web-baseline",
+			VulnerabilityKey: "missing-xcto",
+			LocationKey:      targetURL,
+		})
+	}
+	if s := resp.Header.Get("Server"); s != "" {
+		obs = append(obs, scanner.Observation{
+			Title:            fmt.Sprintf("Server Banner Information Disclosure (%s)", s),
+			Description:      "Web server header exposes internal server software details to potential attackers.",
+			Severity:         "LOW",
+			Confidence:       "HIGH",
+			SourceScanner:    "web-baseline",
+			VulnerabilityKey: "info-disclosure-server",
+			LocationKey:      targetURL,
+		})
+	}
+	return obs
 }
 
 func processNextJob(
 	ctx context.Context,
 	workerID string,
+	db postgres.DBTX,
 	queue *scanPostgres.ScanJobQueue,
 	scanRepo *scanPostgres.ScanRepository,
 	nmapAdapter *scanner.NmapAdapter,
@@ -143,24 +245,28 @@ func processNextJob(
 			return
 		}
 
-		// Determine scanner from target or profile: web URLs use ZAP, hosts/IPs use Nmap
 		if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
-			artifact, err := zapAdapter.ExecuteScan(ctx, scanDomain.ScanExecutionRequest{
+			// Probe web security baseline
+			webObs := probeWebSecurity(ctx, target)
+			allObservations = append(allObservations, webObs...)
+
+			// Also probe port scan on host if possible
+			parsedHost := target
+			if u, err := url.Parse(target); err == nil && u.Hostname() != "" {
+				parsedHost = u.Hostname()
+			}
+			artifact, err := nmapAdapter.ExecuteScan(ctx, scanDomain.ScanExecutionRequest{
 				ScanID:      scan.ID(),
-				TargetHost:  target,
-				ProfileName: "zap-baseline",
-				Timeout:     10 * time.Minute,
+				TargetHost:  parsedHost,
+				ProfileName: "top-ports",
+				Timeout:     3 * time.Minute,
 			})
-			if err != nil {
-				log.Printf("[VULNEX WORKER] ZAP execution failed on target %s: %v", target, err)
-				continue
+			if err == nil {
+				obs, parseErr := nmapParser.Parse(artifact.OutputReader, 50*1024*1024)
+				if parseErr == nil {
+					allObservations = append(allObservations, obs...)
+				}
 			}
-			obs, err := zapParser.Parse(artifact.OutputReader, 50*1024*1024)
-			if err != nil {
-				log.Printf("[VULNEX WORKER] ZAP parse error on target %s: %v", target, err)
-				continue
-			}
-			allObservations = append(allObservations, obs...)
 		} else {
 			artifact, err := nmapAdapter.ExecuteScan(ctx, scanDomain.ScanExecutionRequest{
 				ScanID:      scan.ID(),
@@ -182,31 +288,35 @@ func processNextJob(
 	}
 
 	// Ingest observations as normalized findings
-	var dtos []findingApp.RawObservationDTO
-	for _, o := range allObservations {
-		dtos = append(dtos, findingApp.RawObservationDTO{
-			Title:            o.Title,
-			Description:      o.Description,
-			Severity:         o.Severity,
-			Confidence:       o.Confidence,
-			SourceScanner:    o.SourceScanner,
-			VulnerabilityKey: o.VulnerabilityKey,
-			LocationKey:      o.LocationKey,
-			AssetCriticality: "MEDIUM",
-		})
-	}
-
-	if len(dtos) > 0 {
-		_, err := ingestUC.Execute(ctx, findingApp.IngestFindingsCommand{
-			WorkspaceID:  scan.WorkspaceID().String(),
-			ProjectID:    scan.ProjectID().String(),
-			ScanID:       scan.ID().String(),
-			AssetID:      scan.ProjectID().String() + "-asset",
-			Observations: dtos,
-			DiscoveredAt: time.Now().UTC(),
-		})
+	if len(allObservations) > 0 && len(targets) > 0 {
+		assetID, err := ensureAssetID(ctx, db, scan.ProjectID().String(), targets[0])
 		if err != nil {
-			log.Printf("[VULNEX WORKER] Finding ingestion error: %v", err)
+			log.Printf("[VULNEX WORKER] Failed to ensure asset: %v", err)
+		} else {
+			var dtos []findingApp.RawObservationDTO
+			for _, o := range allObservations {
+				dtos = append(dtos, findingApp.RawObservationDTO{
+					Title:            o.Title,
+					Description:      o.Description,
+					Severity:         o.Severity,
+					Confidence:       o.Confidence,
+					SourceScanner:    o.SourceScanner,
+					VulnerabilityKey: o.VulnerabilityKey,
+					LocationKey:      o.LocationKey,
+					AssetCriticality: "MEDIUM",
+				})
+			}
+			_, err = ingestUC.Execute(ctx, findingApp.IngestFindingsCommand{
+				WorkspaceID:  scan.WorkspaceID().String(),
+				ProjectID:    scan.ProjectID().String(),
+				ScanID:       scan.ID().String(),
+				AssetID:      assetID,
+				Observations: dtos,
+				DiscoveredAt: time.Now().UTC(),
+			})
+			if err != nil {
+				log.Printf("[VULNEX WORKER] Finding ingestion error: %v", err)
+			}
 		}
 	}
 

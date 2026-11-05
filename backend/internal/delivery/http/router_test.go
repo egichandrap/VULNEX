@@ -81,8 +81,9 @@ func TestRouter_HealthCheckAndAuthEndpoints(t *testing.T) {
 
 	setupAdminUC := identityApp.NewSetupInitialAdminUseCase(userRepo, tokenRepo, hasher)
 	authUC := identityApp.NewAuthenticateUserUseCase(userRepo, hasher)
+	changePasswordUC := identityApp.NewChangePasswordUseCase(userRepo, hasher)
 
-	authHandler := handlers.NewAuthHandler(setupAdminUC, authUC, userRepo)
+	authHandler := handlers.NewAuthHandler(setupAdminUC, authUC, changePasswordUC, userRepo)
 
 	router, err := NewRouter(RouterConfig{
 		TrustedProxies: []string{"127.0.0.1/32"},

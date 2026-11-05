@@ -17,9 +17,12 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
+    const identifier = email.trim();
+    const loginEmail = !identifier.includes("@") ? `${identifier}@vulnex.local` : identifier;
+
     try {
       await api.login({
-        email: email.trim(),
+        email: loginEmail,
         password,
       });
 
@@ -53,14 +56,14 @@ export default function LoginPage() {
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">
-            Email Address
+            Username or Email
           </label>
           <input
-            type="email"
+            type="text"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@vulnex.local"
+            placeholder="admin or admin@vulnex.local"
             className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
           />
         </div>
@@ -74,9 +77,13 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••••••"
+            placeholder="admin"
             className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
           />
+        </div>
+
+        <div className="p-2.5 rounded bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300">
+          Default credentials: <code className="font-mono bg-blue-900/40 px-1 py-0.5 rounded text-white">admin</code> / <code className="font-mono bg-blue-900/40 px-1 py-0.5 rounded text-white">admin</code> (dapat diubah setelah login).
         </div>
 
         <button

@@ -84,7 +84,14 @@ func (r *FindingRepository) FindByFingerprint(
 		WHERE project_id = $1 AND fingerprint = $2
 	`
 	row := r.db.QueryRowContext(ctx, query, projectID.String(), fingerprint.String())
-	return r.scanFinding(row)
+	finding, err := r.scanFinding(row)
+	if err != nil {
+		if errors.Is(err, ErrFindingNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return finding, nil
 }
 
 func (r *FindingRepository) ListByProject(ctx context.Context, projectID domain.ProjectID) ([]*domain.Finding, error) {

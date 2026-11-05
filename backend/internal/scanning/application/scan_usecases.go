@@ -41,9 +41,9 @@ type RequestScanCommand struct {
 }
 
 type RequestScanResult struct {
-	ScanID    string
-	Status    string
-	CreatedAt time.Time
+	ScanID    string    `json:"scan_id"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // RequestScanUseCase orchestrates scan submission and scope gating.
@@ -96,11 +96,26 @@ func (uc *RequestScanUseCase) Execute(ctx context.Context, cmd RequestScanComman
 	if cmd.ScanID != "" {
 		// allow caller or generate
 	}
-	wsID, _ := domain.GenerateWorkspaceID()
-	projectID, _ := domain.GenerateProjectID()
-	authID, _ := domain.GenerateAuthorizationID()
-	profileID, _ := domain.GenerateProfileVersionID()
-	userID, _ := domain.GenerateUserID()
+	wsID, err := domain.NewWorkspaceID(cmd.WorkspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid workspace ID: %w", err)
+	}
+	projectID, err := domain.NewProjectID(cmd.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid project ID: %w", err)
+	}
+	authID, err := domain.NewAuthorizationID(cmd.AuthorizationID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid authorization ID: %w", err)
+	}
+	profileID, err := domain.NewProfileVersionID(cmd.ProfileVersionID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid profile version ID: %w", err)
+	}
+	userID, err := domain.NewUserID(cmd.RequestedBy)
+	if err != nil {
+		return nil, fmt.Errorf("invalid requested by user ID: %w", err)
+	}
 
 	scan, err := domain.NewScan(
 		scanID,
@@ -118,8 +133,12 @@ func (uc *RequestScanUseCase) Execute(ctx context.Context, cmd RequestScanComman
 
 	// 4. Create ScanJob entity
 	now := time.Now().UTC()
+	jobID, err := domain.GenerateJobID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate job ID: %w", err)
+	}
 	job := &domain.ScanJob{
-		ID:          domain.JobID{},
+		ID:          jobID,
 		ScanID:      scan.ID(),
 		Status:      domain.ScanStatusQueued,
 		Attempt:     0,

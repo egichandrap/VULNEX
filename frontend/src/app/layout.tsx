@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { Shield, LayoutDashboard, Globe, AlertTriangle, Layers, Settings, LogOut } from "lucide-react";
+import NavbarUser from "@/components/NavbarUser";
 
 export const metadata: Metadata = {
   title: "VULNEX — Vulnerability Assessment & Pen-Testing Management",
@@ -58,23 +59,17 @@ export default function RootLayout({
                   <AlertTriangle className="w-4 h-4" />
                   <span>Findings</span>
                 </Link>
+                <Link
+                  href="/settings"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition flex items-center space-x-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </Link>
               </nav>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/setup"
-                className="text-xs bg-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded border border-slate-700 transition"
-              >
-                Onboarding Setup
-              </Link>
-              <Link
-                href="/login"
-                className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded transition shadow-sm"
-              >
-                Sign In
-              </Link>
-            </div>
+            <NavbarUser />
           </div>
         </header>
 

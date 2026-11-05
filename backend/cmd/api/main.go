@@ -81,6 +81,7 @@ func main() {
 	// Instantiate use cases
 	setupAdminUC := identityApp.NewSetupInitialAdminUseCase(userRepo, tokenRepo, hasher)
 	authUC := identityApp.NewAuthenticateUserUseCase(userRepo, hasher)
+	changePasswordUC := identityApp.NewChangePasswordUseCase(userRepo, hasher)
 	createWsUC := workspaceApp.NewCreateWorkspaceUseCase(workspaceRepo)
 	updatePolicyUC := workspaceApp.NewUpdateWorkspacePolicyUseCase(workspaceRepo)
 	scanAuthGate := authgate.NewAuthorizationAdapter(authRepo)
@@ -88,7 +89,7 @@ func main() {
 	cancelScanUC := scanApp.NewCancelScanUseCase(scanRepo)
 
 	// Instantiate HTTP handlers
-	authHandler := handlers.NewAuthHandler(setupAdminUC, authUC, userRepo)
+	authHandler := handlers.NewAuthHandler(setupAdminUC, authUC, changePasswordUC, userRepo)
 	workspaceHandler := handlers.NewWorkspaceHandler(createWsUC, updatePolicyUC, workspaceRepo)
 	assetHandler := handlers.NewAssetHandler(assetRepo)
 	scanHandler := handlers.NewScanHandler(requestScanUC, cancelScanUC, scanRepo)

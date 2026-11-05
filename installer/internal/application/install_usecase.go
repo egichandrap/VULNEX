@@ -70,13 +70,17 @@ func (uc *InstallVulnexUseCase) Execute(ctx context.Context, cfg *domain.Install
 	}
 	defer func() { _ = unlock() }()
 
-	// 2. Generate secure database password if absent
+	// 2. Preserve existing database password or generate secure one if absent
 	if cfg.DatabasePassword == "" {
-		passBytes := make([]byte, 16)
-		if _, err := rand.Read(passBytes); err != nil {
-			return nil, "", domain.WrapError(domain.ExitGeneralFailure, "failed to generate secure password", err)
+		if existingCfg, err := uc.configRepo.LoadConfig(ctx, filepath.Join(cfg.DataDir, "config.json")); err == nil && existingCfg.DatabasePassword != "" {
+			cfg.DatabasePassword = existingCfg.DatabasePassword
+		} else {
+			passBytes := make([]byte, 16)
+			if _, err := rand.Read(passBytes); err != nil {
+				return nil, "", domain.WrapError(domain.ExitGeneralFailure, "failed to generate secure password", err)
+			}
+			cfg.DatabasePassword = hex.EncodeToString(passBytes)
 		}
-		cfg.DatabasePassword = hex.EncodeToString(passBytes)
 	}
 
 	// 3. Pre-flight diagnostics

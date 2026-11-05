@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import { Globe, Play, CheckCircle, Clock, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Globe, Play, CheckCircle, Clock, AlertTriangle, ShieldAlert, LogIn } from "lucide-react";
 
 export default function ScansPage() {
   const [target, setTarget] = useState("");
@@ -10,6 +11,13 @@ export default function ScansPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ scan_id: string; status: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsAuthenticated(!!localStorage.getItem("vulnex_token"));
+    }
+  }, []);
 
   const handleLaunchScan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +25,11 @@ export default function ScansPage() {
     setResult(null);
 
     if (!target.trim()) return;
+
+    if (typeof window !== "undefined" && !localStorage.getItem("vulnex_token")) {
+      setError("Authentication required: Silakan Sign In terlebih dahulu untuk menjalankan scanning keamanan.");
+      return;
+    }
 
     setLoading(true);
 
@@ -54,6 +67,21 @@ export default function ScansPage() {
         <div className="lg:col-span-1 p-6 rounded-xl bg-vulnex-card border border-vulnex-border space-y-4">
           <h2 className="text-lg font-bold text-white">Trigger Assessment</h2>
 
+          {isAuthenticated === false && (
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                <span>Login diperlukan sebelum scanning</span>
+              </div>
+              <Link
+                href="/login"
+                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold rounded text-[11px] transition"
+              >
+                Sign In
+              </Link>
+            </div>
+          )}
+
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start space-x-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -62,11 +90,27 @@ export default function ScansPage() {
           )}
 
           {result && (
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-start space-x-2">
-              <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong>Scan Queued!</strong>
-                <div className="font-mono text-[11px] mt-0.5">ID: {result.scan_id}</div>
+            <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs space-y-2">
+              <div className="flex items-start space-x-2">
+                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-400" />
+                <div className="space-y-1">
+                  <div className="font-bold text-sm text-white">Scan Berhasil Diantrekan!</div>
+                  <div className="font-mono text-xs text-slate-300">
+                    ID: <span className="text-emerald-300 font-semibold">{result.scan_id || (result as any).ScanID}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Status: <span className="font-semibold text-blue-400">{result.status || (result as any).Status || "QUEUED"}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between">
+                <span className="text-slate-300 text-[11px]">Lihat hasil pemindaian:</span>
+                <Link
+                  href="/findings"
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-xs transition inline-flex items-center space-x-1"
+                >
+                  <span>Buka Findings &rarr;</span>
+                </Link>
               </div>
             </div>
           )}

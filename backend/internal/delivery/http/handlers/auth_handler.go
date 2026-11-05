@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/vulnex/vulnex/backend/internal/delivery/http/httputil"
 	"github.com/vulnex/vulnex/backend/internal/delivery/http/middleware"
@@ -11,20 +12,23 @@ import (
 )
 
 type AuthHandler struct {
-	setupAdminUseCase *identityApp.SetupInitialAdminUseCase
-	authUseCase       *identityApp.AuthenticateUserUseCase
-	userRepo          identityDomain.UserRepository
+	setupAdminUseCase     *identityApp.SetupInitialAdminUseCase
+	authUseCase           *identityApp.AuthenticateUserUseCase
+	changePasswordUseCase *identityApp.ChangePasswordUseCase
+	userRepo              identityDomain.UserRepository
 }
 
 func NewAuthHandler(
 	setupAdmin *identityApp.SetupInitialAdminUseCase,
 	authUseCase *identityApp.AuthenticateUserUseCase,
+	changePasswordUseCase *identityApp.ChangePasswordUseCase,
 	userRepo identityDomain.UserRepository,
 ) *AuthHandler {
 	return &AuthHandler{
-		setupAdminUseCase: setupAdmin,
-		authUseCase:       authUseCase,
-		userRepo:          userRepo,
+		setupAdminUseCase:     setupAdmin,
+		authUseCase:           authUseCase,
+		changePasswordUseCase: changePasswordUseCase,
+		userRepo:              userRepo,
 	}
 }
 
@@ -70,8 +74,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	emailStr := strings.TrimSpace(req.Email)
+	if emailStr != "" && !strings.Contains(emailStr, "@") {
+		emailStr = emailStr + "@vulnex.local"
+	}
+
 	cmd := identityApp.AuthenticateUserCommand{
-		Email:    req.Email,
+		Email:    emailStr,
 		Password: req.Password,
 	}
 
@@ -92,6 +101,48 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, response)
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userIDStr := middleware.GetUserID(r)
+	if userIDStr == "" {
+		httputil.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "missing authenticated session")
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "invalid JSON payload")
+		return
+	}
+
+	cmd := identityApp.ChangePasswordCommand{
+		UserID:          userIDStr,
+		CurrentPassword: req.CurrentPassword,
+		NewPassword:     req.NewPassword,
+	}
+
+	if err := h.changePasswordUseCase.Execute(r.Context(), cmd); err != nil {
+		switch err {
+		case identityApp.ErrIncorrectCurrentPassword:
+			httputil.WriteError(w, http.StatusUnauthorized, "INCORRECT_PASSWORD", err.Error())
+		case identityApp.ErrPasswordEmpty:
+			httputil.WriteError(w, http.StatusBadRequest, "INVALID_PASSWORD", err.Error())
+		default:
+			httputil.WriteError(w, http.StatusInternalServerError, "PASSWORD_UPDATE_FAILED", err.Error())
+		}
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, map[string]string{
+		"status":  "success",
+		"message": "password updated successfully",
+	})
 }
 
 func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {

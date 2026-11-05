@@ -68,6 +68,7 @@ func NewRouter(cfg RouterConfig) (http.Handler, error) {
 			auth.Use(authMw.RequireAuth)
 
 			auth.Get("/auth/me", cfg.AuthHandler.GetMe)
+			auth.Patch("/auth/password", cfg.AuthHandler.ChangePassword)
 
 			// Workspaces
 			auth.Get("/workspaces", cfg.Workspace.ListWorkspaces)

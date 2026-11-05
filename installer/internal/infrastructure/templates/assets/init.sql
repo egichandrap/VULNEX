@@ -299,3 +299,81 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_audit_logs_workspace_time ON audit_logs (workspace_id, created_at DESC);
+
+-- ============================================================================
+-- 11. Initial Baseline Seed Data
+-- ============================================================================
+
+-- Default Administrator (Username: admin or admin@vulnex.local, Password: admin)
+INSERT INTO users (id, email_normalized, password_hash, display_name, status)
+VALUES (
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9',
+    'admin@vulnex.local',
+    crypt('admin', gen_salt('bf', 10)),
+    'Administrator',
+    'ACTIVE'
+) ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+
+-- Default Workspace
+INSERT INTO workspaces (id, name, owner_user_id, allow_private_network_scan, status)
+VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    'Default Workspace',
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9',
+    true,
+    'ACTIVE'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Default Workspace Membership
+INSERT INTO workspace_members (workspace_id, user_id, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9',
+    'OWNER'
+) ON CONFLICT (workspace_id, user_id) DO NOTHING;
+
+-- Default Project
+INSERT INTO projects (id, workspace_id, name, description, status, created_by)
+VALUES (
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000001',
+    'Primary Infrastructure',
+    'Default vulnerability assessment and penetration testing scope',
+    'ACTIVE',
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Default Scanner Profile & Version
+INSERT INTO scanner_profiles (id, name, description)
+VALUES (
+    '00000000-0000-0000-0000-000000000004',
+    'nmap-top-ports',
+    'Nmap — Top Ports Discovery (TCP)'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO scanner_profile_versions (id, profile_id, version, parameters_schema, execution_template)
+VALUES (
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000004',
+    'v1.0.0',
+    '{}',
+    'nmap --top-ports 1000'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Default Global Authorization & Scopes (allows testing against firing-range, scanme, localhost, and internet targets)
+INSERT INTO authorizations (id, project_id, authorized_by, valid_from, valid_to, document_reference)
+VALUES (
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000002',
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9',
+    '2020-01-01 00:00:00Z',
+    '2099-12-31 23:59:59Z',
+    'AUTH-DEFAULT-BASELINE'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO authorization_scopes (authorization_id, scope_type, rule_value, is_exclusion)
+VALUES
+    ('00000000-0000-0000-0000-000000000003', 'DOMAIN', 'public-firing-range.appspot.com', false),
+    ('00000000-0000-0000-0000-000000000003', 'DOMAIN', 'scanme.nmap.org', false),
+    ('00000000-0000-0000-0000-000000000003', 'CIDR', '0.0.0.0/0', false)
+ON CONFLICT DO NOTHING;
