@@ -70,7 +70,9 @@ class APIClient {
   private token: string | null = null;
 
   constructor() {
-    this.baseURL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
+    this.baseURL = typeof window !== 'undefined'
+      ? ''
+      : (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://api:8080');
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('vulnex_token');
     }

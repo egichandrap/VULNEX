@@ -70,6 +70,14 @@ func (u UserID) String() string {
 	return u.value
 }
 
+func generateUUID() string {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
+
 type Role string
 
 const (
@@ -146,7 +154,7 @@ func NewWorkspace(name string, ownerID UserID) (*Workspace, error) {
 
 	now := time.Now().UTC()
 	ownerMember := WorkspaceMember{
-		id:        ownerID.String() + "-member",
+		id:        generateUUID(),
 		userID:    ownerID,
 		role:      RoleOwner,
 		createdAt: now,
@@ -229,7 +237,7 @@ func (w *Workspace) AddMember(userID UserID, role Role) error {
 
 	now := time.Now().UTC()
 	w.members = append(w.members, WorkspaceMember{
-		id:        userID.String() + "-member",
+		id:        generateUUID(),
 		userID:    userID,
 		role:      role,
 		createdAt: now,

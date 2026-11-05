@@ -68,6 +68,10 @@ services:
   web:
     image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-web:${VULNEX_VERSION:-latest}
     restart: unless-stopped
+    environment:
+      INTERNAL_API_URL: "http://api:8080"
+    depends_on:
+      - api
     networks:
       - vulnex-internal
 
