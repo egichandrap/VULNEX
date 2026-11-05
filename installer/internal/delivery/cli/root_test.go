@@ -56,10 +56,30 @@ func TestInstallCommand_FailsWithoutMode(t *testing.T) {
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
-	rootCmd.SetArgs([]string{"install"})
+	rootCmd.SetArgs([]string{"install", "--non-interactive"})
 
 	err := rootCmd.Execute()
 	if err == nil {
 		t.Errorf("Expected install command without --mode to fail, but it succeeded")
+	}
+}
+
+func TestInstallCommand_RunsTUIWizardInteractive(t *testing.T) {
+	rootCmd := NewRootCommand()
+	buf := new(bytes.Buffer)
+	in := bytes.NewBufferString("1\n\ny\n")
+	rootCmd.SetIn(in)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs([]string{"install"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("interactive install wizard failed: %v", err)
+	}
+
+	output := buf.String()
+	if !bytes.Contains(buf.Bytes(), []byte("INITIAL ADMINISTRATOR SETUP TOKEN")) {
+		t.Errorf("expected output to contain setup token card, got: %s", output)
 	}
 }

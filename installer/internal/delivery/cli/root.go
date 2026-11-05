@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/vulnex/vulnex/installer/internal/delivery/tui"
 	"github.com/vulnex/vulnex/installer/internal/domain"
 
 	"github.com/spf13/cobra"
@@ -81,18 +82,32 @@ func newInstallCmd() *cobra.Command {
 		Use:   "install",
 		Short: "Install and provision VULNEX in Local or Server deployment mode",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if mode == "" {
-				return fmt.Errorf("required flag '--mode' missing (must be 'local' or 'server')")
-			}
-			if mode != "local" && mode != "server" {
+			if nonInteractive {
+				if mode == "" {
+					return fmt.Errorf("required flag '--mode' missing (must be 'local' or 'server')")
+				}
+				if mode != "local" && mode != "server" {
+					return fmt.Errorf("invalid mode '%s': must be 'local' or 'server'", mode)
+				}
+				if mode == "server" && domainName == "" {
+					return fmt.Errorf("server mode requires '--domain' hostname")
+				}
+			} else if mode != "" && mode != "local" && mode != "server" {
 				return fmt.Errorf("invalid mode '%s': must be 'local' or 'server'", mode)
-			}
-			if mode == "server" && domainName == "" {
-				return fmt.Errorf("server mode requires '--domain' hostname")
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if !nonInteractive && mode == "" {
+				wizard := tui.NewInstallWizard(cmd.InOrStdin(), cmd.OutOrStdout())
+				cfg, _, err := wizard.Run(cmd.Context())
+				if err != nil {
+					return err
+				}
+				cmd.Printf("\nInstallation configured for %s mode (data dir: %s).\n", cfg.Mode, cfg.DataDir)
+				return nil
+			}
+
 			cmd.Printf("Initiating VULNEX installation in %s mode...\n", mode)
 			return nil
 		},
