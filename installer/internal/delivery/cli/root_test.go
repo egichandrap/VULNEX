@@ -3,6 +3,8 @@ package cli
 import (
 	"bytes"
 	"testing"
+
+	"github.com/vulnex/vulnex/installer/internal/domain"
 )
 
 func TestRootCommand_HasRequiredSubcommands(t *testing.T) {
@@ -83,3 +85,15 @@ func TestInstallCommand_RunsTUIWizardInteractive(t *testing.T) {
 		t.Errorf("expected output to contain setup token card, got: %s", output)
 	}
 }
+
+func TestResolveExitCode(t *testing.T) {
+	if code := ResolveExitCode(nil); code != 0 {
+		t.Errorf("expected 0 for nil error, got %d", code)
+	}
+
+	domErr := domain.NewError(domain.ExitInvalidConfig, "invalid config")
+	if code := ResolveExitCode(domErr); code != int(domain.ExitInvalidConfig) {
+		t.Errorf("expected %d for domain error, got %d", domain.ExitInvalidConfig, code)
+	}
+}
+

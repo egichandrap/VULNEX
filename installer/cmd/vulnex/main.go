@@ -9,6 +9,6 @@ import (
 func main() {
 	rootCmd := cli.NewRootCommand()
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		os.Exit(cli.ResolveExitCode(err))
 	}
 }

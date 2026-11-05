@@ -202,33 +202,6 @@ func newDashboardCmd() *cobra.Command {
 	}
 }
 
-func newConfigCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "config",
-		Short: "Manage and validate VULNEX configuration",
-	}
-
-	validateCmd := &cobra.Command{
-		Use:   "validate",
-		Short: "Validate configuration without printing secrets",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("Configuration is valid.")
-			return nil
-		},
-	}
-
-	showCmd := &cobra.Command{
-		Use:   "show",
-		Short: "Display active configuration with secrets redacted",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("Displaying redacted configuration...")
-			return nil
-		},
-	}
-
-	cmd.AddCommand(validateCmd, showCmd)
-	return cmd
-}
 
 func newUpdateCmd() *cobra.Command {
 	var targetVersion string
