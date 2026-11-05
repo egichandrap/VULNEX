@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,13 @@ var (
 // SetupTokenID is the identifier for a SetupToken aggregate.
 type SetupTokenID struct {
 	value string
+}
+
+func NewSetupTokenID(val string) (SetupTokenID, error) {
+	if strings.TrimSpace(val) == "" {
+		return SetupTokenID{}, errors.New("setup token ID cannot be empty")
+	}
+	return SetupTokenID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateSetupTokenID() (SetupTokenID, error) {

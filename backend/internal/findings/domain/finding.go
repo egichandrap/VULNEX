@@ -20,6 +20,13 @@ type FindingID struct {
 	value string
 }
 
+func NewFindingID(val string) (FindingID, error) {
+	if strings.TrimSpace(val) == "" {
+		return FindingID{}, errors.New("finding ID cannot be empty")
+	}
+	return FindingID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateFindingID() (FindingID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -36,6 +43,14 @@ func (f FindingID) String() string {
 }
 
 type WorkspaceID struct{ value string }
+
+func NewWorkspaceID(val string) (WorkspaceID, error) {
+	if strings.TrimSpace(val) == "" {
+		return WorkspaceID{}, errors.New("workspace ID cannot be empty")
+	}
+	return WorkspaceID{value: strings.TrimSpace(val)}, nil
+}
+
 func (w WorkspaceID) String() string { return w.value }
 func GenerateWorkspaceID() (WorkspaceID, error) {
 	var b [16]byte
@@ -44,6 +59,14 @@ func GenerateWorkspaceID() (WorkspaceID, error) {
 }
 
 type ProjectID struct{ value string }
+
+func NewProjectID(val string) (ProjectID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ProjectID{}, errors.New("project ID cannot be empty")
+	}
+	return ProjectID{value: strings.TrimSpace(val)}, nil
+}
+
 func (p ProjectID) String() string { return p.value }
 func GenerateProjectID() (ProjectID, error) {
 	var b [16]byte
@@ -52,6 +75,14 @@ func GenerateProjectID() (ProjectID, error) {
 }
 
 type ScanID struct{ value string }
+
+func NewScanID(val string) (ScanID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ScanID{}, errors.New("scan ID cannot be empty")
+	}
+	return ScanID{value: strings.TrimSpace(val)}, nil
+}
+
 func (s ScanID) String() string { return s.value }
 func GenerateScanID() (ScanID, error) {
 	var b [16]byte
@@ -60,6 +91,14 @@ func GenerateScanID() (ScanID, error) {
 }
 
 type AssetID struct{ value string }
+
+func NewAssetID(val string) (AssetID, error) {
+	if strings.TrimSpace(val) == "" {
+		return AssetID{}, errors.New("asset ID cannot be empty")
+	}
+	return AssetID{value: strings.TrimSpace(val)}, nil
+}
+
 func (a AssetID) String() string { return a.value }
 func GenerateAssetID() (AssetID, error) {
 	var b [16]byte
@@ -151,6 +190,13 @@ type FindingFingerprint struct {
 	value string
 }
 
+func NewFindingFingerprint(val string) (FindingFingerprint, error) {
+	if strings.TrimSpace(val) == "" {
+		return FindingFingerprint{}, errors.New("finding fingerprint cannot be empty")
+	}
+	return FindingFingerprint{value: strings.TrimSpace(val)}, nil
+}
+
 func CalculateFingerprint(projectID, canonicalAsset, scannerType, vulnKey, locationKey string) FindingFingerprint {
 	raw := fmt.Sprintf("%s|%s|%s|%s|%s",
 		strings.TrimSpace(projectID),
@@ -233,12 +279,62 @@ func NewFinding(
 }
 
 func (f *Finding) ID() FindingID { return f.id }
+func (f *Finding) WorkspaceID() WorkspaceID { return f.workspaceID }
+func (f *Finding) ProjectID() ProjectID { return f.projectID }
+func (f *Finding) ScanID() ScanID { return f.scanID }
+func (f *Finding) AssetID() AssetID { return f.assetID }
 func (f *Finding) Fingerprint() FindingFingerprint { return f.fingerprint }
 func (f *Finding) Title() string { return f.title }
+func (f *Finding) Description() string { return f.description }
+func (f *Finding) Severity() Severity { return f.severity }
+func (f *Finding) Confidence() Confidence { return f.confidence }
 func (f *Finding) Status() FindingStatus { return f.status }
+func (f *Finding) SourceScanner() string { return f.sourceScanner }
 func (f *Finding) FirstSeenAt() time.Time { return f.firstSeenAt }
 func (f *Finding) LastSeenAt() time.Time { return f.lastSeenAt }
+func (f *Finding) RiskModelVersion() string { return f.riskModelVersion }
 func (f *Finding) RiskScore() float64 { return f.riskScore }
+func (f *Finding) Justification() string { return f.justification }
+
+func ReconstituteFinding(
+	id FindingID,
+	workspaceID WorkspaceID,
+	projectID ProjectID,
+	scanID ScanID,
+	assetID AssetID,
+	fingerprint FindingFingerprint,
+	title string,
+	description string,
+	severity Severity,
+	confidence Confidence,
+	status FindingStatus,
+	sourceScanner string,
+	firstSeenAt time.Time,
+	lastSeenAt time.Time,
+	riskModelVersion string,
+	riskScore float64,
+	justification string,
+) *Finding {
+	return &Finding{
+		id:               id,
+		workspaceID:      workspaceID,
+		projectID:        projectID,
+		scanID:           scanID,
+		assetID:          assetID,
+		fingerprint:      fingerprint,
+		title:            title,
+		description:      description,
+		severity:         severity,
+		confidence:       confidence,
+		status:           status,
+		sourceScanner:    sourceScanner,
+		firstSeenAt:      firstSeenAt,
+		lastSeenAt:       lastSeenAt,
+		riskModelVersion: riskModelVersion,
+		riskScore:        riskScore,
+		justification:    justification,
+	}
+}
 
 func (f *Finding) RecordObservation(scanID ScanID, at time.Time) {
 	f.scanID = scanID

@@ -24,6 +24,13 @@ type AssetID struct {
 	value string
 }
 
+func NewAssetID(val string) (AssetID, error) {
+	if strings.TrimSpace(val) == "" {
+		return AssetID{}, errors.New("asset ID cannot be empty")
+	}
+	return AssetID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateAssetID() (AssetID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -41,6 +48,13 @@ func (a AssetID) String() string {
 
 type ProjectID struct {
 	value string
+}
+
+func NewProjectID(val string) (ProjectID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ProjectID{}, errors.New("project ID cannot be empty")
+	}
+	return ProjectID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateProjectID() (ProjectID, error) {
@@ -144,6 +158,10 @@ func (c CanonicalAssetValue) String() string {
 	return c.value
 }
 
+func ReconstituteCanonicalAssetValue(val string) CanonicalAssetValue {
+	return CanonicalAssetValue{value: val}
+}
+
 // Asset is the Aggregate Root representing an assessment target.
 type Asset struct {
 	id             AssetID
@@ -184,6 +202,38 @@ func NewAsset(projectID ProjectID, assetType AssetType, canonicalVal CanonicalAs
 
 func (a *Asset) ID() AssetID {
 	return a.id
+}
+
+func (a *Asset) CreatedAt() time.Time {
+	return a.createdAt
+}
+
+func (a *Asset) UpdatedAt() time.Time {
+	return a.updatedAt
+}
+
+func ReconstituteAsset(
+	id AssetID,
+	projectID ProjectID,
+	assetType AssetType,
+	canonicalVal CanonicalAssetValue,
+	displayValue string,
+	crit AssetCriticality,
+	status AssetStatus,
+	createdAt time.Time,
+	updatedAt time.Time,
+) *Asset {
+	return &Asset{
+		id:             id,
+		projectID:      projectID,
+		assetType:      assetType,
+		canonicalValue: canonicalVal,
+		displayValue:   displayValue,
+		criticality:    crit,
+		status:         status,
+		createdAt:      createdAt,
+		updatedAt:      updatedAt,
+	}
 }
 
 func (a *Asset) ProjectID() ProjectID {

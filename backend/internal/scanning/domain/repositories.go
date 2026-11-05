@@ -2,6 +2,9 @@ package domain
 
 import (
 	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -15,6 +18,24 @@ type ScanRepository interface {
 
 type JobID struct {
 	value string
+}
+
+func NewJobID(val string) (JobID, error) {
+	if val == "" {
+		return JobID{}, errors.New("job ID cannot be empty")
+	}
+	return JobID{value: val}, nil
+}
+
+func GenerateJobID() (JobID, error) {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return JobID{}, fmt.Errorf("failed to generate UUID: %w", err)
+	}
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	val := fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+	return JobID{value: val}, nil
 }
 
 func (j JobID) String() string {

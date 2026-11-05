@@ -20,6 +20,13 @@ type AuthorizationID struct {
 	value string
 }
 
+func NewAuthorizationID(val string) (AuthorizationID, error) {
+	if strings.TrimSpace(val) == "" {
+		return AuthorizationID{}, errors.New("authorization ID cannot be empty")
+	}
+	return AuthorizationID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateAuthorizationID() (AuthorizationID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -39,6 +46,13 @@ type ProjectID struct {
 	value string
 }
 
+func NewProjectID(val string) (ProjectID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ProjectID{}, errors.New("project ID cannot be empty")
+	}
+	return ProjectID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateProjectID() (ProjectID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -56,6 +70,13 @@ func (p ProjectID) String() string {
 
 type UserID struct {
 	value string
+}
+
+func NewUserID(val string) (UserID, error) {
+	if strings.TrimSpace(val) == "" {
+		return UserID{}, errors.New("user ID cannot be empty")
+	}
+	return UserID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateUserID() (UserID, error) {
@@ -211,4 +232,72 @@ func (a *Authorization) ScopeRules() []ScopeRule {
 	res := make([]ScopeRule, len(a.scopeRules))
 	copy(res, a.scopeRules)
 	return res
+}
+
+func (a *Authorization) AuthorizedParty() string {
+	return a.authorizedParty
+}
+
+func (a *Authorization) ApproverUserID() UserID {
+	return a.approverUserID
+}
+
+func (a *Authorization) EvidenceReference() string {
+	return a.evidenceReference
+}
+
+func (a *Authorization) EvidenceChecksum() string {
+	return a.evidenceChecksum
+}
+
+func (a *Authorization) AllowedMethods() []string {
+	res := make([]string, len(a.allowedMethods))
+	copy(res, a.allowedMethods)
+	return res
+}
+
+func (a *Authorization) RevokedAt() *time.Time {
+	return a.revokedAt
+}
+
+func (a *Authorization) RevocationReason() string {
+	return a.revocationReason
+}
+
+func (a *Authorization) CreatedAt() time.Time {
+	return a.createdAt
+}
+
+func ReconstituteAuthorization(
+	id AuthorizationID,
+	projectID ProjectID,
+	status AuthorizationStatus,
+	authorizedParty string,
+	approverID UserID,
+	evidenceRef string,
+	evidenceChecksum string,
+	validFrom time.Time,
+	validUntil time.Time,
+	allowedMethods []string,
+	revokedAt *time.Time,
+	revocationReason string,
+	scopeRules []ScopeRule,
+	createdAt time.Time,
+) *Authorization {
+	return &Authorization{
+		id:                id,
+		projectID:         projectID,
+		status:            status,
+		authorizedParty:   authorizedParty,
+		approverUserID:    approverID,
+		evidenceReference: evidenceRef,
+		evidenceChecksum:  evidenceChecksum,
+		validFrom:         validFrom,
+		validUntil:        validUntil,
+		allowedMethods:    allowedMethods,
+		revokedAt:         revokedAt,
+		revocationReason:  revocationReason,
+		scopeRules:        scopeRules,
+		createdAt:         createdAt,
+	}
 }

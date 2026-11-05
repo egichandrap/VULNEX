@@ -19,6 +19,13 @@ type ScanID struct {
 	value string
 }
 
+func NewScanID(val string) (ScanID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ScanID{}, errors.New("scan ID cannot be empty")
+	}
+	return ScanID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateScanID() (ScanID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -36,6 +43,13 @@ func (s ScanID) String() string {
 
 type WorkspaceID struct {
 	value string
+}
+
+func NewWorkspaceID(val string) (WorkspaceID, error) {
+	if strings.TrimSpace(val) == "" {
+		return WorkspaceID{}, errors.New("workspace ID cannot be empty")
+	}
+	return WorkspaceID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateWorkspaceID() (WorkspaceID, error) {
@@ -57,6 +71,13 @@ type ProjectID struct {
 	value string
 }
 
+func NewProjectID(val string) (ProjectID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ProjectID{}, errors.New("project ID cannot be empty")
+	}
+	return ProjectID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateProjectID() (ProjectID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -74,6 +95,13 @@ func (p ProjectID) String() string {
 
 type AuthorizationID struct {
 	value string
+}
+
+func NewAuthorizationID(val string) (AuthorizationID, error) {
+	if strings.TrimSpace(val) == "" {
+		return AuthorizationID{}, errors.New("authorization ID cannot be empty")
+	}
+	return AuthorizationID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateAuthorizationID() (AuthorizationID, error) {
@@ -95,6 +123,13 @@ type ProfileVersionID struct {
 	value string
 }
 
+func NewProfileVersionID(val string) (ProfileVersionID, error) {
+	if strings.TrimSpace(val) == "" {
+		return ProfileVersionID{}, errors.New("profile version ID cannot be empty")
+	}
+	return ProfileVersionID{value: strings.TrimSpace(val)}, nil
+}
+
 func GenerateProfileVersionID() (ProfileVersionID, error) {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -112,6 +147,13 @@ func (p ProfileVersionID) String() string {
 
 type UserID struct {
 	value string
+}
+
+func NewUserID(val string) (UserID, error) {
+	if strings.TrimSpace(val) == "" {
+		return UserID{}, errors.New("user ID cannot be empty")
+	}
+	return UserID{value: strings.TrimSpace(val)}, nil
 }
 
 func GenerateUserID() (UserID, error) {
@@ -206,6 +248,82 @@ func (s *Scan) WorkspaceID() WorkspaceID {
 
 func (s *Scan) ProjectID() ProjectID {
 	return s.projectID
+}
+
+func (s *Scan) AuthorizationID() AuthorizationID {
+	return s.authorizationID
+}
+
+func (s *Scan) ScannerProfileVersionID() ProfileVersionID {
+	return s.scannerProfileVersionID
+}
+
+func (s *Scan) RequestedBy() UserID {
+	return s.requestedBy
+}
+
+func (s *Scan) IdempotencyKey() string {
+	return s.idempotencyKey
+}
+
+func (s *Scan) TargetSnapshot() []string {
+	res := make([]string, len(s.targetSnapshot))
+	copy(res, s.targetSnapshot)
+	return res
+}
+
+func (s *Scan) StartedAt() *time.Time {
+	return s.startedAt
+}
+
+func (s *Scan) CompletedAt() *time.Time {
+	return s.completedAt
+}
+
+func (s *Scan) FailureReason() string {
+	return s.failureReason
+}
+
+func (s *Scan) CreatedAt() time.Time {
+	return s.createdAt
+}
+
+func (s *Scan) UpdatedAt() time.Time {
+	return s.updatedAt
+}
+
+func ReconstituteScan(
+	id ScanID,
+	workspaceID WorkspaceID,
+	projectID ProjectID,
+	authID AuthorizationID,
+	profileVersionID ProfileVersionID,
+	requestedBy UserID,
+	status ScanStatus,
+	idempotencyKey string,
+	targetSnapshot []string,
+	startedAt *time.Time,
+	completedAt *time.Time,
+	failureReason string,
+	createdAt time.Time,
+	updatedAt time.Time,
+) *Scan {
+	return &Scan{
+		id:                      id,
+		workspaceID:             workspaceID,
+		projectID:               projectID,
+		authorizationID:         authID,
+		scannerProfileVersionID: profileVersionID,
+		requestedBy:             requestedBy,
+		status:                  status,
+		idempotencyKey:          idempotencyKey,
+		targetSnapshot:          targetSnapshot,
+		startedAt:               startedAt,
+		completedAt:             completedAt,
+		failureReason:           failureReason,
+		createdAt:               createdAt,
+		updatedAt:               updatedAt,
+	}
 }
 
 func (s *Scan) Status() ScanStatus {

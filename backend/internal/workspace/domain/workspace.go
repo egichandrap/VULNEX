@@ -86,12 +86,29 @@ type WorkspaceMember struct {
 	createdAt time.Time
 }
 
+func ReconstituteWorkspaceMember(id string, userID UserID, role Role, createdAt time.Time) WorkspaceMember {
+	return WorkspaceMember{
+		id:        id,
+		userID:    userID,
+		role:      role,
+		createdAt: createdAt,
+	}
+}
+
+func (m *WorkspaceMember) ID() string {
+	return m.id
+}
+
 func (m *WorkspaceMember) UserID() UserID {
 	return m.userID
 }
 
 func (m *WorkspaceMember) Role() Role {
 	return m.role
+}
+
+func (m *WorkspaceMember) CreatedAt() time.Time {
+	return m.createdAt
 }
 
 type WorkspaceStatus string
@@ -149,6 +166,36 @@ func NewWorkspace(name string, ownerID UserID) (*Workspace, error) {
 
 func (w *Workspace) ID() WorkspaceID {
 	return w.id
+}
+
+func (w *Workspace) CreatedAt() time.Time {
+	return w.createdAt
+}
+
+func (w *Workspace) UpdatedAt() time.Time {
+	return w.updatedAt
+}
+
+func ReconstituteWorkspace(
+	id WorkspaceID,
+	name string,
+	ownerUserID UserID,
+	allowPrivateNetworkScan bool,
+	status WorkspaceStatus,
+	members []WorkspaceMember,
+	createdAt time.Time,
+	updatedAt time.Time,
+) *Workspace {
+	return &Workspace{
+		id:                      id,
+		name:                    name,
+		ownerUserID:             ownerUserID,
+		allowPrivateNetworkScan: allowPrivateNetworkScan,
+		status:                  status,
+		members:                 members,
+		createdAt:               createdAt,
+		updatedAt:               updatedAt,
+	}
 }
 
 func (w *Workspace) Name() string {
