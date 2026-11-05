@@ -3,11 +3,6 @@ version: 2
 
 project_name: vulnex
 
-before:
-  hooks:
-    - go mod tidy
-    - go test ./...
-
 builds:
   - id: vulnex-cli
     main: ./cmd/vulnex
