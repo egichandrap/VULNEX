@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/egichandrap/VULNEX/main/scripts/ins
 Or download manually from GitHub Releases, verify the SHA-256 checksum, and install to `/usr/local/bin`:
 
 ```bash
-tar -xzf vulnex_1.0.0_linux_amd64.tar.gz
+tar -xzf vulnex_1.1.0_linux_amd64.tar.gz
 sudo install -m 0755 vulnex /usr/local/bin/vulnex
 vulnex version
 vulnex doctor
@@ -58,7 +58,24 @@ vulnex status
 
 Server mode requires an explicit network/TLS configuration. Do not expose PostgreSQL, Redis, or scanner worker ports publicly.
 
-### 4. Run tests
+### 4. Uninstall VULNEX
+
+VULNEX requires an explicit data retention choice to prevent accidental data loss:
+
+```bash
+# Option A: Stop/remove containers while strictly preserving persistent data & databases (Recommended)
+vulnex uninstall --keep-data
+
+# Option B: Complete wipe removing containers and permanently deleting persistent data
+vulnex uninstall --delete-data
+
+# (Optional) Remove the CLI binary from your executable path
+sudo rm -f /usr/local/bin/vulnex
+```
+
+> **Tip:** You can create a database backup prior to uninstalling with `vulnex backup --output ./vulnex-backup`.
+
+### 5. Run tests
 
 For contributors building from source:
 
