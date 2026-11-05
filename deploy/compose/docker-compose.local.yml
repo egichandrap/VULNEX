@@ -1,0 +1,63 @@
+version: '3.8'
+
+# VULNEX Local Deployment Profile (Loopback Only, Single-User Evaluation)
+# Bound exclusively to 127.0.0.1; zero public exposure.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vulnex}
+      POSTGRES_USER: ${POSTGRES_USER:-vulnex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - vulnex-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-api:${VULNEX_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-vulnex}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vulnex}?sslmode=disable"
+      PORT: "8080"
+    networks:
+      - vulnex-internal
+
+  worker:
+    image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-worker:${VULNEX_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-vulnex}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vulnex}?sslmode=disable"
+    networks:
+      - vulnex-internal
+
+  web:
+    image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-web:${VULNEX_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      # Bound strictly to loopback 127.0.0.1
+      - "127.0.0.1:3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000/api"
+    networks:
+      - vulnex-internal
+
+networks:
+  vulnex-internal:
+    driver: bridge
+
+volumes:
+  postgres-data:

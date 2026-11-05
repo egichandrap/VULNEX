@@ -1,0 +1,80 @@
+version: '3.8'
+
+# VULNEX Server Deployment Profile (Production Remote Access)
+# Uses Embedded Caddy reverse proxy for automated ACME TLS.
+# Database, worker, and internal ports remain completely private.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Domain hostname required for server deployment}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - vulnex-internal
+    depends_on:
+      - web
+      - api
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vulnex}
+      POSTGRES_USER: ${POSTGRES_USER:-vulnex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - vulnex-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-api:${VULNEX_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-vulnex}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vulnex}?sslmode=disable"
+      PORT: "8080"
+      TRUSTED_PROXIES: "172.16.0.0/12,127.0.0.1" # Caddy internal bridge & localhost
+    networks:
+      - vulnex-internal
+
+  worker:
+    image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-worker:${VULNEX_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER:-vulnex}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vulnex}?sslmode=disable"
+    networks:
+      - vulnex-internal
+
+  web:
+    image: ${VULNEX_REGISTRY:-ghcr.io/vulnex}/vulnex-web:${VULNEX_VERSION:-latest}
+    restart: unless-stopped
+    networks:
+      - vulnex-internal
+
+networks:
+  vulnex-internal:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

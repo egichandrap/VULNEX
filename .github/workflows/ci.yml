@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-and-installer:
+    name: Go Backend & Installer Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Verify Go Workspace & Modules
+        run: |
+          go work sync
+
+      - name: Check Formatting
+        run: |
+          make fmt
+          git diff --exit-code
+
+      - name: Go Vet
+        run: |
+          make vet
+
+      - name: Architecture Boundary Verification
+        run: |
+          make test-arch
+
+      - name: Unit & Race Tests
+        run: |
+          make test-race
+
+      - name: Compile Executables
+        run: |
+          make build
