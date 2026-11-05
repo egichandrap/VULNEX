@@ -11,8 +11,8 @@ import (
 const (
 	minMemoryBytes = 2 * 1024 * 1024 * 1024  // 2 GB min
 	recMemoryBytes = 4 * 1024 * 1024 * 1024  // 4 GB rec
-	minDiskBytes   = 5 * 1024 * 1024 * 1024  // 5 GB min
-	recDiskBytes   = 10 * 1024 * 1024 * 1024 // 10 GB rec
+	minDiskBytes   = 2 * 1024 * 1024 * 1024  // 2 GB min (container footprint ~500 MB)
+	recDiskBytes   = 5 * 1024 * 1024 * 1024  // 5 GB rec
 )
 
 // DiagnoseEnvironmentUseCase evaluates host environment, container runtime, and resources.
@@ -133,14 +133,14 @@ func (uc *DiagnoseEnvironmentUseCase) Execute(ctx context.Context) (*domain.Diag
 			report.AddCheck(domain.CheckResult{
 				Name:        "Available Disk Space",
 				Status:      domain.CheckFail,
-				Message:     fmt.Sprintf("Insufficient disk space: %.1f GB (min: 5 GB)", diskGB),
+				Message:     fmt.Sprintf("Insufficient disk space: %.1f GB (min: %d GB)", diskGB, minDiskBytes/(1024*1024*1024)),
 				Remediation: "Free up storage space on the installation drive",
 			})
 		} else if diskBytes < recDiskBytes {
 			report.AddCheck(domain.CheckResult{
 				Name:        "Available Disk Space",
 				Status:      domain.CheckWarn,
-				Message:     fmt.Sprintf("%.1f GB available (recommended: 10 GB)", diskGB),
+				Message:     fmt.Sprintf("%.1f GB available (recommended: %d GB)", diskGB, recDiskBytes/(1024*1024*1024)),
 				Remediation: "Additional disk space recommended for ongoing vulnerability scans and reporting data",
 			})
 		} else {

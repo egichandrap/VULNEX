@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/vulnex/vulnex/installer/internal/application/ports"
 	"github.com/vulnex/vulnex/installer/internal/domain"
@@ -91,7 +92,13 @@ func (uc *InstallVulnexUseCase) Execute(ctx context.Context, cfg *domain.Install
 			return nil, "", err
 		}
 		if report.HasFailures() {
-			return nil, "", domain.NewError(domain.ExitUnsupportedEnv, "pre-flight diagnostics failed")
+			var failMsgs []string
+			for _, c := range report.Checks {
+				if c.Status == domain.CheckFail {
+					failMsgs = append(failMsgs, fmt.Sprintf("%s: %s (Action: %s)", c.Name, c.Message, c.Remediation))
+				}
+			}
+			return nil, "", domain.NewError(domain.ExitUnsupportedEnv, fmt.Sprintf("pre-flight diagnostics failed:\n  - %s", strings.Join(failMsgs, "\n  - ")))
 		}
 	}
 
