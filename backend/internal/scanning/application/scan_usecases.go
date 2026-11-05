@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -166,6 +167,13 @@ func (uc *RequestScanUseCase) isTargetAuthorized(target string, rules []ScopeRul
 		return false
 	}
 
+	targetHost := cleanTarget
+	if strings.Contains(cleanTarget, "://") {
+		if u, err := url.Parse(cleanTarget); err == nil && u.Hostname() != "" {
+			targetHost = strings.ToLower(u.Hostname())
+		}
+	}
+
 	included := false
 	for _, rule := range rules {
 		cleanRuleTarget := strings.ToLower(strings.TrimSpace(rule.Target))
@@ -173,19 +181,29 @@ func (uc *RequestScanUseCase) isTargetAuthorized(target string, rules []ScopeRul
 
 		switch rule.TargetType {
 		case "DOMAIN":
-			if cleanTarget == cleanRuleTarget || strings.HasSuffix(cleanTarget, "."+cleanRuleTarget) {
+			if cleanRuleTarget == "*" ||
+				targetHost == cleanRuleTarget ||
+				strings.HasSuffix(targetHost, "."+cleanRuleTarget) ||
+				cleanTarget == cleanRuleTarget ||
+				strings.HasSuffix(cleanTarget, "."+cleanRuleTarget) {
 				matches = true
 			}
 		case "IP":
-			targetIP := net.ParseIP(cleanTarget)
+			targetIP := net.ParseIP(targetHost)
+			if targetIP == nil {
+				targetIP = net.ParseIP(cleanTarget)
+			}
 			ruleIP := net.ParseIP(cleanRuleTarget)
 			if targetIP != nil && ruleIP != nil && targetIP.Equal(ruleIP) {
 				matches = true
-			} else if cleanTarget == cleanRuleTarget {
+			} else if targetHost == cleanRuleTarget || cleanTarget == cleanRuleTarget {
 				matches = true
 			}
 		case "CIDR":
-			targetIP := net.ParseIP(cleanTarget)
+			targetIP := net.ParseIP(targetHost)
+			if targetIP == nil {
+				targetIP = net.ParseIP(cleanTarget)
+			}
 			if targetIP != nil {
 				_, ipNet, err := net.ParseCIDR(cleanRuleTarget)
 				if err == nil && ipNet.Contains(targetIP) {
@@ -193,11 +211,13 @@ func (uc *RequestScanUseCase) isTargetAuthorized(target string, rules []ScopeRul
 				}
 			}
 		case "URL":
-			if strings.HasPrefix(cleanTarget, cleanRuleTarget) {
+			if cleanRuleTarget == "*" ||
+				strings.HasPrefix(cleanTarget, cleanRuleTarget) ||
+				strings.HasPrefix(targetHost, cleanRuleTarget) {
 				matches = true
 			}
 		default:
-			if cleanTarget == cleanRuleTarget {
+			if cleanRuleTarget == "*" || cleanTarget == cleanRuleTarget || targetHost == cleanRuleTarget {
 				matches = true
 			}
 		}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -66,6 +67,10 @@ func main() {
 		log.Fatalf("[VULNEX API] Database initialization error: %v", err)
 	}
 	defer db.Close()
+
+	if err := ensureDefaultBaseline(context.Background(), db); err != nil {
+		log.Printf("[VULNEX API] Warning: Failed to seed default baseline: %v", err)
+	}
 
 	// Instantiate infrastructure repositories
 	userRepo := identityPostgres.NewUserRepository(db)
@@ -147,4 +152,72 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+func ensureDefaultBaseline(ctx context.Context, db *sql.DB) error {
+	query := `
+-- Default Scanner Profile & Version
+INSERT INTO scanner_profiles (id, name, scanner_type, description, status)
+VALUES (
+    '00000000-0000-0000-0000-000000000004',
+    'nmap-top-ports',
+    'NMAP',
+    'Nmap — Top Ports Discovery (TCP)',
+    'ACTIVE'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO scanner_profile_versions (id, scanner_profile_id, version, configuration, approved_by, approved_at, checksum, status)
+VALUES (
+    '00000000-0000-0000-0000-000000000004',
+    '00000000-0000-0000-0000-000000000004',
+    'v1.0.0',
+    '{"command": "nmap", "args": ["--top-ports", "1000"]}'::jsonb,
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9',
+    '2024-01-01 00:00:00Z',
+    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    'APPROVED'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Default Global Authorization & Scopes
+INSERT INTO authorizations (
+    id,
+    project_id,
+    status,
+    authorized_party,
+    approver_user_id,
+    evidence_reference,
+    evidence_checksum,
+    valid_from,
+    valid_until,
+    allowed_methods
+) VALUES (
+    '00000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000002',
+    'ACTIVE',
+    'Default SecOps Team',
+    'd5f7f5ab-773c-4e6a-b7c1-8f51f49704c9',
+    'AUTH-DEFAULT-BASELINE',
+    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    '2020-01-01 00:00:00Z',
+    '2099-12-31 23:59:59Z',
+    '["PORT_SCAN", "VULN_ASSESSMENT"]'::jsonb
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO authorization_scopes (
+    authorization_id,
+    rule_type,
+    target_type,
+    canonical_target,
+    notes
+) VALUES
+    ('00000000-0000-0000-0000-000000000003', 'INCLUDE', 'DOMAIN', 'public-firing-range.appspot.com', 'Google Firing Range test bed'),
+    ('00000000-0000-0000-0000-000000000003', 'INCLUDE', 'DOMAIN', 'scanme.nmap.org', 'Nmap test host'),
+    ('00000000-0000-0000-0000-000000000003', 'INCLUDE', 'DOMAIN', '*', 'Global wildcard domain scope'),
+    ('00000000-0000-0000-0000-000000000003', 'INCLUDE', 'CIDR', '0.0.0.0/0', 'Global IPv4 testing scope'),
+    ('00000000-0000-0000-0000-000000000003', 'INCLUDE', 'URL', 'http', 'Global HTTP scope'),
+    ('00000000-0000-0000-0000-000000000003', 'INCLUDE', 'URL', 'https', 'Global HTTPS scope')
+ON CONFLICT (id) DO NOTHING;
+`
+	_, err := db.ExecContext(ctx, query)
+	return err
 }
