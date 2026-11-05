@@ -9,9 +9,9 @@ type Version struct {
 
 // CurrentVersion is the authoritative version of the current build.
 var CurrentVersion = Version{
-	Number:    "0.1.0-dev",
+	Number:    "1.0.0",
 	Commit:    "HEAD",
-	BuildDate: "unreleased",
+	BuildDate: "release",
 }
 
 // String returns formatted version representation.

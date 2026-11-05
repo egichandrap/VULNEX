@@ -83,7 +83,7 @@ export default function RootLayout({
         </main>
 
         <footer className="border-t border-vulnex-border py-4 text-center text-xs text-slate-500">
-          VULNEX Platform v0.1.0-dev • Defensive Pen-Testing Management • Apache 2.0
+          VULNEX Platform v1.0.0 • Defensive Pen-Testing Management • Apache 2.0
         </footer>
       </body>
     </html>

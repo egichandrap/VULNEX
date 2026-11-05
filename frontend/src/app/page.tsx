@@ -12,7 +12,7 @@ export default function DashboardPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
               Core System Healthy
             </span>
-            <span className="text-xs text-slate-400 font-mono">v0.1.0-dev</span>
+            <span className="text-xs text-slate-400 font-mono">v1.0.0</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white mt-2">
             Defensive Security Overview

@@ -28,7 +28,7 @@ import (
 	workspacePostgres "github.com/vulnex/vulnex/backend/internal/workspace/infrastructure/postgres"
 )
 
-const version = "0.1.0-dev"
+const version = "1.0.0"
 
 type simpleAuthenticator struct {
 	userRepo *identityPostgres.UserRepository

@@ -20,7 +20,7 @@ import (
 	"github.com/vulnex/vulnex/backend/internal/scanning/infrastructure/scanner"
 )
 
-const version = "0.1.0-dev"
+const version = "1.0.0"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "version" {
