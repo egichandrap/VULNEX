@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	minMemoryBytes = 2 * 1024 * 1024 * 1024  // 2 GB min
-	recMemoryBytes = 4 * 1024 * 1024 * 1024  // 4 GB rec
-	minDiskBytes   = 2 * 1024 * 1024 * 1024  // 2 GB min (container footprint ~500 MB)
-	recDiskBytes   = 5 * 1024 * 1024 * 1024  // 5 GB rec
+	minMemoryBytes = 2 * 1024 * 1024 * 1024 // 2 GB min
+	recMemoryBytes = 4 * 1024 * 1024 * 1024 // 4 GB rec
+	minDiskBytes   = 1 * 1024 * 1024 * 1024 // 1 GB min (strictly for application containers ~600 MB)
+	recDiskBytes   = 2 * 1024 * 1024 * 1024 // 2 GB rec (buffer for scan history & reports)
 )
 
 // DiagnoseEnvironmentUseCase evaluates host environment, container runtime, and resources.
