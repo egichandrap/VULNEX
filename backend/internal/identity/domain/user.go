@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	ErrInvalidEmail       = errors.New("invalid email address format")
-	ErrEmptyDisplayName   = errors.New("display name cannot be empty")
-	ErrEmptyPasswordHash  = errors.New("password hash cannot be empty")
+	ErrInvalidEmail         = errors.New("invalid email address format")
+	ErrEmptyDisplayName     = errors.New("display name cannot be empty")
+	ErrEmptyPasswordHash    = errors.New("password hash cannot be empty")
 	ErrUserAlreadySuspended = errors.New("user is already suspended")
 	ErrUserAlreadyActive    = errors.New("user is already active")
 )

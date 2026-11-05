@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	ErrNoJobAvailable   = errors.New("no scan job available for claiming")
-	ErrJobNotFound       = errors.New("scan job not found")
-	ErrLeaseLost         = errors.New("scan job lease lost or expired")
+	ErrNoJobAvailable = errors.New("no scan job available for claiming")
+	ErrJobNotFound    = errors.New("scan job not found")
+	ErrLeaseLost      = errors.New("scan job lease lost or expired")
 )
 
 // ScanJobQueue implements domain.ScanJobQueuePort using PostgreSQL FOR UPDATE SKIP LOCKED.
@@ -76,13 +76,13 @@ func (q *ScanJobQueue) ClaimNext(ctx context.Context, workerID string, leaseDura
 	row := q.db.QueryRowContext(ctx, query, workerID, leaseExpiresAt)
 
 	var (
-		idStr          string
-		scanIDStr      string
-		statusStr      string
-		attempt        int
-		leaseOwner     sql.NullString
-		expiresAt      *time.Time
-		availableAt    time.Time
+		idStr       string
+		scanIDStr   string
+		statusStr   string
+		attempt     int
+		leaseOwner  sql.NullString
+		expiresAt   *time.Time
+		availableAt time.Time
 	)
 
 	err := row.Scan(&idStr, &scanIDStr, &statusStr, &attempt, &leaseOwner, &expiresAt, &availableAt)

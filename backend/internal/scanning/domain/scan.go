@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	ErrScanAlreadyTerminal = errors.New("scan is in a terminal state and cannot be modified")
+	ErrScanAlreadyTerminal    = errors.New("scan is in a terminal state and cannot be modified")
 	ErrInvalidStateTransition = errors.New("invalid scan state transition")
-	ErrEmptyScanTargets    = errors.New("scan must have at least one target")
-	ErrEmptyIdempotencyKey = errors.New("idempotency key cannot be empty")
+	ErrEmptyScanTargets       = errors.New("scan must have at least one target")
+	ErrEmptyIdempotencyKey    = errors.New("idempotency key cannot be empty")
 )
 
 type ScanID struct {

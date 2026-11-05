@@ -1,137 +1,171 @@
-# VULNEX Installation Guide
+# VULNEX Installation & Operator Guide
 
-> This guide documents the intended installer experience. Replace example release URLs, registry names, minimum runtime versions, and platform support statements with verified release values before publishing a production release.
+This guide documents the installation, runtime verification, and lifecycle management workflows for VULNEX.
 
-## 1. Requirements
+---
 
-- Supported OS and CPU architecture listed in the release manifest.
-- Docker Engine and Docker Compose Plugin v2.
-- Network access to the official VULNEX release and container registry for online installation.
-- Adequate CPU, memory, and disk according to the release's published sizing guide.
-- Administrator privileges only for installing the CLI or managing system-level runtime components.
+## 1. Prerequisites & System Requirements
 
-The VULNEX CLI does not bundle Docker Engine. If Docker is missing, `vulnex doctor` provides installation guidance. Any automated system package installation must be explicitly approved.
+- **Supported Operating Systems**: Linux (`amd64`, `arm64`), macOS (`amd64`, `arm64`).
+- **Container Runtime**: Docker Engine (v24+) and Docker Compose Plugin (v2.20+).
+- **Hardware Resources**:
+  - Minimum: 2 CPU cores, 2 GB RAM, 10 GB free disk space.
+  - Recommended: 4 CPU cores, 4 GB+ RAM for parallel vulnerability assessments.
+- **Network Ports**:
+  - Local Mode: `127.0.0.1:3000` (loopback only, zero public exposure).
+  - Server Mode: `80` and `443` (for Caddy automated ACME TLS).
 
-## 2. Download and verify
+> [!NOTE]
+> VULNEX CLI does not bundle Docker Engine. Users must install Docker Engine and possess group permissions to communicate with `/var/run/docker.sock` without root escalation.
 
-Download the correct artifact from the official Releases page. Verify the SHA-256 checksum and signature using the verification instructions published with that release.
+---
 
-Do not execute artifacts from unofficial mirrors.
+## 2. Installing the VULNEX CLI Control Plane
 
-## 3. Linux CLI installation
-
-Example for Linux amd64:
+### Automated POSIX Install Script (Linux & macOS)
 
 ```bash
-tar -xzf vulnex-linux-amd64.tar.gz
-sudo install -m 0755 vulnex /usr/local/bin/vulnex
-vulnex version
+curl -fsSL https://raw.githubusercontent.com/egichandrap/VULNEX/main/scripts/install.sh | sh
 ```
 
-For a package-based release, use the package manager and exact package published for your distribution.
+The installation script performs:
+1. Host OS and CPU architecture detection (`linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`).
+2. Release tarball download from official GitHub Releases.
+3. Cryptographic SHA-256 checksum verification against published release digests.
+4. Safe binary extraction and installation to `/usr/local/bin/vulnex` (`0755` permissions).
 
-## 4. Diagnose prerequisites
+---
+
+## 3. Pre-flight Environment Diagnostics (`vulnex doctor`)
+
+Before initiating deployment, run diagnostics to verify runtime prerequisites:
 
 ```bash
 vulnex doctor
 ```
 
-Resolve any reported unsupported OS, missing Docker Engine, missing Compose plugin, insufficient disk/memory, permission, or registry connectivity issue before continuing.
+Or format as JSON for automated CI/CD runners:
+```bash
+vulnex doctor --json
+```
 
-## 5. Local installation
+Checks conducted:
+- Supported OS & CPU architecture.
+- Docker daemon status and socket connectivity permissions.
+- Docker Compose v2 plugin availability.
+- Available system memory and storage capacity.
+- Port availability (`3000` for Local mode; `80`/`443` for Server mode).
+- Container registry reachability.
+
+---
+
+## 4. Platform Provisioning (`vulnex install`)
+
+### Interactive Text User Interface (TUI) Mode
+
+Simply run without arguments to start the interactive onboarding wizard:
 
 ```bash
-vulnex install --mode local
-vulnex status
+vulnex install
+```
+
+The wizard guides through:
+1. Selecting **Local Mode** or **Server Mode**.
+2. Setting domain name and Ingress type (Embedded Caddy with ACME TLS or External Proxy with trusted CIDRs).
+3. Configuring persistent data directory (default `./vulnex-data` or `/var/lib/vulnex`).
+4. Displaying the **single-use ephemeral administrator setup token** (ADR-013).
+
+### Non-Interactive Local Deployment
+
+```bash
+vulnex install --mode local --non-interactive
+```
+
+### Non-Interactive Server Deployment
+
+```bash
+vulnex install --mode server --domain security.example.com --non-interactive
+```
+
+Using an external reverse proxy (ALB / Cloudflare / Nginx):
+```bash
+vulnex install --mode server --domain security.example.com --external-proxy --trusted-proxies "172.16.0.0/12,10.0.0.0/8" --non-interactive
+```
+
+---
+
+## 5. Opening the Dashboard (`vulnex dashboard`)
+
+```bash
 vulnex dashboard
 ```
 
-Local mode must bind the dashboard to loopback by default. Do not configure public ingress for a local installation.
+Opens the local (`http://localhost:3000`) or server (`https://<domain>`) dashboard URL in the default browser.
 
-## 6. Server installation
+---
 
-Before installation:
-- Configure a supported hostname.
-- Configure TLS and the supported reverse proxy/ingress path.
-- Ensure inbound firewall rules expose only the required web entry point.
-- Keep database, Redis, and worker ports private.
-- Prepare persistent storage and backup destination.
-
-Then run:
+## 6. Stack Lifecycle Management
 
 ```bash
-vulnex doctor
-vulnex install --mode server --domain security.example.com
+# Check container status and component health
 vulnex status
-```
 
-The exact TLS and reverse-proxy flags depend on the implemented release. Consult `vulnex install --help` and the release-specific server configuration guide.
-
-## 7. Lifecycle
-
-```bash
-vulnex status
+# Start stopped stack
 vulnex start
+
+# Stop running stack
 vulnex stop
+
+# Restart stack
 vulnex restart
+
+# Stream real-time container logs
 vulnex logs --follow
-vulnex dashboard
+vulnex logs --service api
 ```
 
-## 8. Configuration
+---
+
+## 7. Configuration Inspection (`vulnex config`)
 
 ```bash
-vulnex config validate
-vulnex config show
+# Validate active configuration without applying changes
+vulnex config validate --config ./vulnex-data/config.json
+
+# Display configuration with all database secrets redacted
+vulnex config show --config ./vulnex-data/config.json
 ```
 
-Secret values must be redacted. Edit configuration only using documented fields and run validation before applying changes.
+---
 
-## 9. Backup and restore
+## 8. Backup and Restoration (`vulnex backup` & `vulnex restore`)
 
 ```bash
-vulnex backup --output ./vulnex-backup
-vulnex restore --file ./vulnex-backup
+# Export persistent database and configuration to timestamped SQL dump
+vulnex backup --output ./backups
+
+# Restore database from backup archive
+vulnex restore --file ./backups/vulnex-backup-20261105-180000.sql
 ```
 
-Backups may contain sensitive assessment data. Store them encrypted, restrict access, and test restoration periodically. The exact archive format and encryption behavior must be documented by the implemented release.
+---
 
-## 10. Update
+## 9. Updating the Platform (`vulnex update`)
 
 ```bash
-vulnex update
+vulnex update --version 1.0.1
 ```
 
-Before upgrading, the CLI must verify release authenticity, check database migration compatibility, and create or require a valid recovery point when the migration can affect persistent data.
+---
 
-## 11. Uninstall
+## 10. Uninstallation (`vulnex uninstall`)
 
-Choose explicitly whether to retain or delete persistent data:
+VULNEX enforces an explicit data retention policy during uninstallation:
 
 ```bash
+# Tear down containers while strictly preserving database volumes and assets:
 vulnex uninstall --keep-data
-```
 
-or:
-
-```bash
+# Or completely remove containers and delete all persistent data:
 vulnex uninstall --delete-data
 ```
-
-The destructive option must require an additional confirmation. VULNEX uninstall must not remove unrelated Docker images, containers, networks, or volumes.
-
-## 12. Troubleshooting
-
-| Symptom | Action |
-|---|---|
-| Docker unavailable | Run `vulnex doctor`; install/enable supported Docker runtime |
-| Compose plugin missing | Install supported Compose v2 plugin |
-| Permission denied | Check current user permissions and Docker access; do not run the whole application as root |
-| Registry unreachable | Check DNS, proxy, TLS trust, and outbound connectivity |
-| Health check timeout | Inspect `vulnex status` and `vulnex logs` |
-| Disk space low | Check persistent data and logs; do not manually delete database volumes |
-| Upgrade failed | Preserve logs and backup; follow recovery instructions for that exact release |
-
-## 13. Safe operation
-
-Only assess systems you own or are explicitly authorized to test. Configure scope and authorization in VULNEX before scheduling scans. Never expose scanner worker control ports to untrusted networks.

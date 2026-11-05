@@ -178,10 +178,10 @@ func (a AssetCriticality) Multiplier() float64 {
 type FindingStatus string
 
 const (
-	FindingStatusOpen         FindingStatus = "OPEN"
-	FindingStatusInProgress   FindingStatus = "IN_PROGRESS"
-	FindingStatusResolved     FindingStatus = "RESOLVED"
-	FindingStatusAcceptedRisk FindingStatus = "ACCEPTED_RISK"
+	FindingStatusOpen          FindingStatus = "OPEN"
+	FindingStatusInProgress    FindingStatus = "IN_PROGRESS"
+	FindingStatusResolved      FindingStatus = "RESOLVED"
+	FindingStatusAcceptedRisk  FindingStatus = "ACCEPTED_RISK"
 	FindingStatusFalsePositive FindingStatus = "FALSE_POSITIVE"
 )
 
@@ -278,23 +278,23 @@ func NewFinding(
 	}, nil
 }
 
-func (f *Finding) ID() FindingID { return f.id }
-func (f *Finding) WorkspaceID() WorkspaceID { return f.workspaceID }
-func (f *Finding) ProjectID() ProjectID { return f.projectID }
-func (f *Finding) ScanID() ScanID { return f.scanID }
-func (f *Finding) AssetID() AssetID { return f.assetID }
+func (f *Finding) ID() FindingID                   { return f.id }
+func (f *Finding) WorkspaceID() WorkspaceID        { return f.workspaceID }
+func (f *Finding) ProjectID() ProjectID            { return f.projectID }
+func (f *Finding) ScanID() ScanID                  { return f.scanID }
+func (f *Finding) AssetID() AssetID                { return f.assetID }
 func (f *Finding) Fingerprint() FindingFingerprint { return f.fingerprint }
-func (f *Finding) Title() string { return f.title }
-func (f *Finding) Description() string { return f.description }
-func (f *Finding) Severity() Severity { return f.severity }
-func (f *Finding) Confidence() Confidence { return f.confidence }
-func (f *Finding) Status() FindingStatus { return f.status }
-func (f *Finding) SourceScanner() string { return f.sourceScanner }
-func (f *Finding) FirstSeenAt() time.Time { return f.firstSeenAt }
-func (f *Finding) LastSeenAt() time.Time { return f.lastSeenAt }
-func (f *Finding) RiskModelVersion() string { return f.riskModelVersion }
-func (f *Finding) RiskScore() float64 { return f.riskScore }
-func (f *Finding) Justification() string { return f.justification }
+func (f *Finding) Title() string                   { return f.title }
+func (f *Finding) Description() string             { return f.description }
+func (f *Finding) Severity() Severity              { return f.severity }
+func (f *Finding) Confidence() Confidence          { return f.confidence }
+func (f *Finding) Status() FindingStatus           { return f.status }
+func (f *Finding) SourceScanner() string           { return f.sourceScanner }
+func (f *Finding) FirstSeenAt() time.Time          { return f.firstSeenAt }
+func (f *Finding) LastSeenAt() time.Time           { return f.lastSeenAt }
+func (f *Finding) RiskModelVersion() string        { return f.riskModelVersion }
+func (f *Finding) RiskScore() float64              { return f.riskScore }
+func (f *Finding) Justification() string           { return f.justification }
 
 func ReconstituteFinding(
 	id FindingID,

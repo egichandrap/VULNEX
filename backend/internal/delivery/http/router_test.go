@@ -69,7 +69,7 @@ func (r *fakeTokenRepo) Update(ctx context.Context, token *identityDomain.SetupT
 type dummyHasher struct{}
 
 func (h *dummyHasher) Hash(p string) (string, error) { return "hashed-" + p, nil }
-func (h *dummyHasher) Compare(p, hash string) bool    { return hash == "hashed-"+p }
+func (h *dummyHasher) Compare(p, hash string) bool   { return hash == "hashed-"+p }
 
 func TestRouter_HealthCheckAndAuthEndpoints(t *testing.T) {
 	userRepo := &fakeUserRepo{users: make(map[string]*identityDomain.User)}

@@ -32,6 +32,8 @@ type InstallConfig struct {
 	WebPort          int            `json:"web_port,omitempty"`
 	APIPort          int            `json:"api_port,omitempty"`
 	AutoStart        bool           `json:"auto_start,omitempty"`
+	SkipPreflight    bool           `json:"skip_preflight,omitempty"`
+	DryRun           bool           `json:"dry_run,omitempty"`
 }
 
 // Validate ensures all configuration invariants are satisfied.

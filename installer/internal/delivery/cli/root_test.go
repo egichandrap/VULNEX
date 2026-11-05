@@ -67,6 +67,9 @@ func TestInstallCommand_FailsWithoutMode(t *testing.T) {
 }
 
 func TestInstallCommand_RunsTUIWizardInteractive(t *testing.T) {
+	t.Setenv("VULNEX_SKIP_PREFLIGHT", "1")
+	t.Setenv("VULNEX_DRY_RUN", "1")
+
 	rootCmd := NewRootCommand()
 	buf := new(bytes.Buffer)
 	in := bytes.NewBufferString("1\n\ny\n")
@@ -96,4 +99,3 @@ func TestResolveExitCode(t *testing.T) {
 		t.Errorf("expected %d for domain error, got %d", domain.ExitInvalidConfig, code)
 	}
 }
-

@@ -13,7 +13,7 @@ var (
 	ErrWorkspaceNameTooLong     = errors.New("workspace name exceeds maximum length of 120 characters")
 	ErrMemberAlreadyExists      = errors.New("user is already a member of this workspace")
 	ErrMemberNotFound           = errors.New("member not found in workspace")
-	ErrCannotRemoveSoleOwner     = errors.New("cannot remove the sole owner of the workspace")
+	ErrCannotRemoveSoleOwner    = errors.New("cannot remove the sole owner of the workspace")
 	ErrUnauthorizedPolicyChange = errors.New("only workspace owners or administrators may alter network policies")
 )
 
@@ -120,14 +120,14 @@ const (
 
 // Workspace is the Aggregate Root governing multi-tenant assessment ownership and policies.
 type Workspace struct {
-	id                     WorkspaceID
-	name                   string
-	ownerUserID            UserID
+	id                      WorkspaceID
+	name                    string
+	ownerUserID             UserID
 	allowPrivateNetworkScan bool // ADR-015
-	status                 WorkspaceStatus
-	members                []WorkspaceMember
-	createdAt              time.Time
-	updatedAt              time.Time
+	status                  WorkspaceStatus
+	members                 []WorkspaceMember
+	createdAt               time.Time
+	updatedAt               time.Time
 }
 
 func NewWorkspace(name string, ownerID UserID) (*Workspace, error) {
@@ -153,14 +153,14 @@ func NewWorkspace(name string, ownerID UserID) (*Workspace, error) {
 	}
 
 	return &Workspace{
-		id:                     id,
-		name:                   trimmedName,
-		ownerUserID:            ownerID,
+		id:                      id,
+		name:                    trimmedName,
+		ownerUserID:             ownerID,
 		allowPrivateNetworkScan: false, // Default: false (ADR-015)
-		status:                 WorkspaceStatusActive,
-		members:                []WorkspaceMember{ownerMember},
-		createdAt:              now,
-		updatedAt:              now,
+		status:                  WorkspaceStatusActive,
+		members:                 []WorkspaceMember{ownerMember},
+		createdAt:               now,
+		updatedAt:               now,
 	}, nil
 }
 

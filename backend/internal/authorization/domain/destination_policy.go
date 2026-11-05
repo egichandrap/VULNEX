@@ -6,12 +6,12 @@ import (
 )
 
 var (
-	ErrLoopbackProhibited             = errors.New("destination is a loopback address and is strictly prohibited")
-	ErrLinkLocalProhibited            = errors.New("destination is a link-local address and is strictly prohibited")
-	ErrCloudMetadataProhibited        = errors.New("destination is cloud metadata endpoint (169.254.169.254) and is strictly prohibited")
-	ErrMulticastProhibited            = errors.New("destination is a multicast address and is prohibited")
-	ErrBroadcastProhibited            = errors.New("destination is a broadcast address and is prohibited")
-	ErrPrivateNetworkDeniedByDefault  = errors.New("destination is in a private network (RFC 1918 / RFC 4193) and is denied by default")
+	ErrLoopbackProhibited            = errors.New("destination is a loopback address and is strictly prohibited")
+	ErrLinkLocalProhibited           = errors.New("destination is a link-local address and is strictly prohibited")
+	ErrCloudMetadataProhibited       = errors.New("destination is cloud metadata endpoint (169.254.169.254) and is strictly prohibited")
+	ErrMulticastProhibited           = errors.New("destination is a multicast address and is prohibited")
+	ErrBroadcastProhibited           = errors.New("destination is a broadcast address and is prohibited")
+	ErrPrivateNetworkDeniedByDefault = errors.New("destination is in a private network (RFC 1918 / RFC 4193) and is denied by default")
 )
 
 var (

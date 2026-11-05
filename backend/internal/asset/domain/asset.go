@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	ErrInvalidAssetType      = errors.New("invalid or unsupported asset type")
-	ErrInvalidAssetFormat    = errors.New("asset value fails canonical format validation")
-	ErrEmptyCanonicalValue   = errors.New("canonical asset value cannot be empty")
-	ErrAssetAlreadyArchived  = errors.New("asset is already archived")
+	ErrInvalidAssetType     = errors.New("invalid or unsupported asset type")
+	ErrInvalidAssetFormat   = errors.New("asset value fails canonical format validation")
+	ErrEmptyCanonicalValue  = errors.New("canonical asset value cannot be empty")
+	ErrAssetAlreadyArchived = errors.New("asset is already archived")
 )
 
 var domainRegex = regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$`)

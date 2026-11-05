@@ -47,7 +47,7 @@ func TestCanonicalAssetValue_IP(t *testing.T) {
 		{AssetTypeIPv4, "192.168.1.1", "192.168.1.1", false},
 		{AssetTypeIPv4, "010.000.000.001", "", true}, // ambiguous leading zeros rejected to prevent octal SSRF
 		{AssetTypeIPv4, "999.999.999.999", "", true},
-		{AssetTypeIPv4, "2001:db8::1", "", true}, // IPv6 passed as IPv4
+		{AssetTypeIPv4, "2001:db8::1", "", true},                                         // IPv6 passed as IPv4
 		{AssetTypeIPv6, "2001:0db8:0000:0000:0000:0000:0000:0001", "2001:db8::1", false}, // normalized compressed
 		{AssetTypeIPv6, "::1", "::1", false},
 		{AssetTypeIPv6, "not-an-ip", "", true},
@@ -80,7 +80,7 @@ func TestCanonicalAssetValue_URL(t *testing.T) {
 	}{
 		{"HTTPS://Example.Com:8443/Path/To/Resource?query=1#frag", "https://example.com:8443/Path/To/Resource", false},
 		{"http://api.vulnex.local/", "http://api.vulnex.local", false}, // trailing slash normalized
-		{"ftp://files.example.com", "", true}, // non-http scheme rejected
+		{"ftp://files.example.com", "", true},                          // non-http scheme rejected
 		{"just-a-path/without-scheme", "", true},
 	}
 

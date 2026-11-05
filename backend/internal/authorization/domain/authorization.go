@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	ErrInvalidValidityPeriod        = errors.New("validity period is invalid: validUntil must be after validFrom")
-	ErrEmptyAuthorizedParty         = errors.New("authorized party cannot be empty")
-	ErrEmptyEvidenceReference       = errors.New("evidence reference cannot be empty")
-	ErrEmptyEvidenceChecksum        = errors.New("evidence checksum cannot be empty")
-	ErrAuthorizationAlreadyRevoked  = errors.New("authorization has already been revoked and cannot be revoked again")
+	ErrInvalidValidityPeriod       = errors.New("validity period is invalid: validUntil must be after validFrom")
+	ErrEmptyAuthorizedParty        = errors.New("authorized party cannot be empty")
+	ErrEmptyEvidenceReference      = errors.New("evidence reference cannot be empty")
+	ErrEmptyEvidenceChecksum       = errors.New("evidence checksum cannot be empty")
+	ErrAuthorizationAlreadyRevoked = errors.New("authorization has already been revoked and cannot be revoked again")
 )
 
 type AuthorizationID struct {

@@ -21,12 +21,16 @@ The commands below describe the intended release experience. They become executa
 
 ### 1. Install the VULNEX CLI
 
-Download the installer package for your operating system and CPU architecture from the official VULNEX Releases page. Verify its SHA-256 checksum and signature before execution.
-
-Linux example:
+Run the automated POSIX installer:
 
 ```bash
-tar -xzf vulnex-linux-amd64.tar.gz
+curl -fsSL https://raw.githubusercontent.com/egichandrap/VULNEX/main/scripts/install.sh | sh
+```
+
+Or download manually from GitHub Releases, verify the SHA-256 checksum, and install to `/usr/local/bin`:
+
+```bash
+tar -xzf vulnex_1.0.0_linux_amd64.tar.gz
 sudo install -m 0755 vulnex /usr/local/bin/vulnex
 vulnex version
 vulnex doctor

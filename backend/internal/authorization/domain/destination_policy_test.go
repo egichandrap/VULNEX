@@ -90,9 +90,9 @@ func TestNetworkDestinationPolicy_PublicDestinationsAlwaysAllowed(t *testing.T) 
 	policy := NetworkDestinationPolicy{}
 
 	publicIPs := []string{
-		"93.184.216.34",       // example.com
-		"8.8.8.8",             // Google DNS
-		"1.1.1.1",             // Cloudflare DNS
+		"93.184.216.34",        // example.com
+		"8.8.8.8",              // Google DNS
+		"1.1.1.1",              // Cloudflare DNS
 		"2606:4700:4700::1111", // Cloudflare IPv6
 	}
 

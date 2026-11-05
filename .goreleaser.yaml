@@ -1,0 +1,50 @@
+# VULNEX GoReleaser Configuration
+version: 2
+
+project_name: vulnex
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: vulnex-cli
+    main: ./cmd/vulnex
+    dir: ./installer
+    binary: vulnex
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/vulnex/vulnex/installer/internal/domain.CurrentVersion.Number={{ .Version }}
+      - -X github.com/vulnex/vulnex/installer/internal/domain.CurrentVersion.Commit={{ .Commit }}
+      - -X github.com/vulnex/vulnex/installer/internal/domain.CurrentVersion.BuildDate={{ .Date }}
+
+archives:
+  - id: default
+    builds:
+      - vulnex-cli
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+
+checksum:
+  name_template: "vulnex_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

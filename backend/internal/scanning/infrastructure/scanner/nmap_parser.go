@@ -25,9 +25,9 @@ type nmapRunXML struct {
 }
 
 type nmapHostXML struct {
-	Status    nmapStatusXML   `xml:"status"`
-	Addresses []nmapAddrXML   `xml:"address"`
-	Ports     nmapPortsXML    `xml:"ports"`
+	Status    nmapStatusXML `xml:"status"`
+	Addresses []nmapAddrXML `xml:"address"`
+	Ports     nmapPortsXML  `xml:"ports"`
 }
 
 type nmapStatusXML struct {
