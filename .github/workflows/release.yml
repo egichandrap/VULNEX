@@ -28,8 +28,8 @@ jobs:
       - name: Run Tests with Race Detection
         run: make test-race
 
-  goreleaser:
-    name: Publish Release Artifacts
+  release:
+    name: Build & Publish Release Artifacts
     needs: quality-gate
     runs-on: ubuntu-latest
     steps:
@@ -43,11 +43,41 @@ jobs:
         with:
           go-version: 'stable'
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+      - name: Build Multi-Architecture Binaries
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          
+          # Darwin (macOS) arm64 & amd64
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o dist/vulnex ./installer/cmd/vulnex
+          tar -czf "dist/vulnex_${VERSION}_darwin_arm64.tar.gz" -C dist vulnex
+          
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/vulnex ./installer/cmd/vulnex
+          tar -czf "dist/vulnex_${VERSION}_darwin_amd64.tar.gz" -C dist vulnex
+          
+          # Linux amd64 & arm64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/vulnex ./installer/cmd/vulnex
+          tar -czf "dist/vulnex_${VERSION}_linux_amd64.tar.gz" -C dist vulnex
+          
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o dist/vulnex ./installer/cmd/vulnex
+          tar -czf "dist/vulnex_${VERSION}_linux_arm64.tar.gz" -C dist vulnex
+          
+          rm -f dist/vulnex
+          
+          # Generate Checksums
+          cd dist
+          sha256sum vulnex_*.tar.gz > "vulnex_${VERSION}_checksums.txt"
+          cd ..
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
+          files: |
+            dist/*.tar.gz
+            dist/*_checksums.txt
+          name: VULNEX ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
